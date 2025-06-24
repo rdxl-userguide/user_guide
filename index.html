@@ -183,7 +183,7 @@
     import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
     const rows = d3.csvParse(document.getElementById('csvData').textContent.trim());
     const LV = Object.keys(rows[0]).filter(k=>/^분류\d+$/.test(k)).sort((a,b)=>+a.slice(2)-+b.slice(2));
-    const L2_KEY = Object.keys(rows[0]).find(k=>k.startsWith('매월말'));
+    const L2_KEY = Object.keys(rows[0]).find(k=>k.startsWith('매월 말'));
     function upsert(p,l){ return p.children.find(c=>c.name===l)||(p.children.push({name:l,children:[]}),p.children.at(-1)); }
     function build(data){
       const root = { name:'ROOT', children:[] };
@@ -387,10 +387,10 @@
       if (pay)  html += `<p><b>결제수단 :</b> ${pay}</p>`;
       html += '<hr>';
 
-      if (pay.includes('개인법인카드')){
+      if (pay.includes('개인 법인카드')){
         html += `
           <p style="margin-top:18px;font-weight:700;color:var(--color-blue)">
-            # 개인법인카드를 1번이라도 사용했다면, 월말에 지출건을 모아 지출승인요청서를 작성해야 됩니다.
+            # 개인 법인카드를 1번이라도 사용했다면, 월말에 지출건을 모아 지출승인요청서를 작성해야 됩니다.
           </p>`;
       }
 
@@ -400,7 +400,7 @@
         html += `<h3>신청 매뉴얼</h3><iframe src="${d.l1}" allowfullscreen></iframe>`;
       }
 
-      if (pay.includes('개인법인카드') && d.l2){
+      if (pay.includes('개인 법인카드') && d.l2){
         html += `<h3>월말 지출승인요청서 매뉴얼</h3><iframe src="${d.l2}" allowfullscreen></iframe>`;
       }
 
