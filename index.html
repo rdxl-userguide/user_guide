@@ -8,44 +8,126 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --color-blue:#2C5CA3;   --color-green:#20B685;   --color-text:#424242;
-      --fs-opt-min:1.5rem;    --fs-opt-vw:8vw;         --fs-opt-max:2rem;
-      --pad-desk-h:24px;      --pad-mob-h:5px;
-      --fs-home:22px;         --pad-home-v:16px;       --pad-home-h:24px;
-      --gap-desk:24px;        --gap-port:20px;
+    /* ───────────────────  전역 변수  ─────────────────── */
+    :root{
+      --color-blue:#2C5CA3;  --color-green:#20B685; --color-text:#424242;
+      --fs-opt-min:1.5rem;   --fs-opt-vw:8vw;       --fs-opt-max:2rem;
+      --pad-desk-h:24px;     --pad-mob-h:5px;
+      --fs-home:22px;        --pad-home-v:16px;     --pad-home-h:24px;
+      --gap-desk:24px;       --gap-port:20px;
       --stage-title-height:60px;
-      --pc-width:80vw;        /* PC 폭: 화면의 80 % */
+      --pc-width:80vw;       /* PC 폭: 화면의 80 % */
     }
 
-    html,body{margin:0;height:100%;font-family:'Noto Sans',sans-serif;background:#fff;color:var(--color-text);overflow:hidden}
-    .stage-title{position:fixed;top:0;left:0;width:100%;height:var(--stage-title-height);line-height:var(--stage-title-height);text-align:center;font-weight:700;font-size:2rem;color:var(--color-green);background:#fff;z-index:1000;transition:opacity .25s ease}
-    .option{font-weight:700;font-size:clamp(var(--fs-opt-min),var(--fs-opt-vw),var(--fs-opt-max));line-height:1.4;text-align:center;width:100%;cursor:pointer;user-select:none;color:var(--color-text);margin-bottom:var(--gap-desk)}
+    /* ───────────────────  기본 레이아웃  ─────────────────── */
+    html,body{
+      margin:0;height:100%;
+      font-family:'Noto Sans',sans-serif;
+      background:#fff;color:var(--color-text);
+      overflow:hidden;
+    }
+
+    .stage-title{
+      position:fixed;top:0;left:0;width:100%;
+      height:var(--stage-title-height);line-height:var(--stage-title-height);
+      text-align:center;font-weight:700;font-size:2rem;color:var(--color-green);
+      background:#fff;z-index:1000;transition:opacity .25s ease;
+    }
+
+    /* 카드형 옵션(1·2단계 등) */
+    .option{
+      font-weight:700;
+      font-size:clamp(var(--fs-opt-min),var(--fs-opt-vw),var(--fs-opt-max));
+      line-height:1.4;text-align:center;width:100%;cursor:pointer;
+      user-select:none;color:var(--color-text);margin-bottom:var(--gap-desk);
+    }
     .highlight{color:var(--color-green)}
     .option:focus-visible{outline:3px solid var(--color-green);border-radius:4px}
-    #backBtn,#homeBtn,.home-btn{position:fixed;bottom:18px;left:var(--pad-mob-h);padding:var(--pad-home-v) var(--pad-home-h);font-size:var(--fs-home);border:none;border-radius:8px;background:none;color:var(--color-green);font-weight:700;cursor:pointer;z-index:1000}
 
-    /* 옵션 영역 */
-    #stage{position:absolute;top:var(--stage-title-height);bottom:0;left:0;right:0;display:flex;flex-direction:column;justify-content:center;align-items:center;align-content:center;padding:0 var(--pad-desk-h);gap:var(--gap-desk);overflow-y:auto;transition:opacity .25s ease}
+    /* 공통 버튼(HOME) */
+    #backBtn,#homeBtn,.home-btn{
+      position:fixed;bottom:18px;left:var(--pad-mob-h);
+      padding:var(--pad-home-v) var(--pad-home-h);font-size:var(--fs-home);
+      border:none;border-radius:8px;background:none;color:var(--color-green);
+      font-weight:700;cursor:pointer;z-index:1000;
+    }
 
-    /* 상세 패널 공통 */
-    #finalPanel{position:fixed;inset:0;background:#fff;display:none;flex-direction:column;align-items:center;padding:0;overflow-y:auto;transition:opacity .25s ease}
-    #finalPanel.show{display:flex;opacity:1}
-    #finalPanel h1,#finalPanel section{font-size:20px;line-height:1.55}
-    #finalPanel h1{font-size:1.8rem;color:var(--color-blue);margin-bottom:.5em;font-weight:700}
-    #finalPanel iframe{width:100%;aspect-ratio:16/9;border:1px solid #ccc;border-radius:8px;margin:0}
+    /* ───────────────────  단계(표시 영역)  ─────────────────── */
+    #stage{
+      position:absolute;top:var(--stage-title-height);bottom:0;left:0;right:0;
+      display:flex;flex-direction:column;justify-content:center;align-items:center;
+      padding:0 var(--pad-desk-h);gap:var(--gap-desk);overflow-y:auto;
+      transition:opacity .25s ease;
+    }
 
-    /* 모바일·세로 */
-    @media (orientation:portrait){#stage{padding:0 var(--pad-mob-h);gap:var(--gap-port)}}
+    /* ───────────────────  세부항목(분류3) 표  ─────────────────── */
+    table.optTbl{
+      width:90%;max-width:960px;margin:0 auto;border-collapse:collapse;
+      border-top:1px solid #d9d9d9;border-bottom:1px solid #d9d9d9;
+      font-size:clamp(var(--fs-opt-min),var(--fs-opt-vw),var(--fs-opt-max));
+    }
+    table.optTbl tr{border-bottom:1px solid #d9d9d9;}
+    table.optTbl td{
+      padding:12px 10px;line-height:1.34;vertical-align:top;word-break:keep-all;
+    }
+    table.optTbl td:first-child{
+      width:48px;text-align:center;font-weight:700;
+    }
+    table.optTbl td:nth-child(2){
+      width:220px;font-weight:700;white-space:nowrap;
+    }
+    table.optTbl tr:hover{background:#f7f9fa;cursor:pointer;}
 
-    /* PC 레이아웃 보정 */
+    /* 모바일·폴드(세로) : 폭 ≤ 800 px  */
+    @media (max-width:800px) and (orientation:portrait){
+      table.optTbl td{display:block;width:100%;padding:6px 8px;}
+      table.optTbl td:first-child,
+      table.optTbl td:nth-child(2){
+        display:inline-block;width:auto;padding:6px 8px 0 8px;
+      }
+      table.optTbl td:last-child{
+        margin-left:48px;        /* 번호 영역만큼 들여쓰기 */
+        padding-top:2px;
+        font-size:0.85rem;       /* 살짝 작게 */
+      }
+    }
+
+    /* ───────────────────  상세 패널  ─────────────────── */
+    #finalPanel{
+      position:fixed;inset:0;background:#fff;display:none;
+      flex-direction:column;align-items:center;overflow-y:auto;
+      transition:opacity .25s ease;
+    }
+    #finalPanel.show{display:flex;opacity:1;}
+
+    /* 가변 폭 + 글자 크기 동기화 */
+    #finalPanel h1,#finalPanel section{
+      width:90%;max-width:960px;margin:0 auto;
+      font-size:clamp(var(--fs-opt-min),var(--fs-opt-vw),var(--fs-opt-max));
+      line-height:1.58;
+    }
+    #finalPanel h1{
+      margin:20px auto 12px;font-weight:700;color:var(--color-blue);
+      font-size:clamp(1.4rem,5vw,2rem);line-height:1.3;
+    }
+    #finalPanel iframe{
+      width:100%;aspect-ratio:16/9;border:1px solid #ccc;border-radius:8px;margin:0;
+    }
+
+    /* ───────────────────  모바일 세로 공통 여백 조정  ─────────────────── */
+    @media (orientation:portrait){
+      #stage{padding:0 var(--pad-mob-h);gap:var(--gap-port);}
+    }
+
+    /* ───────────────────  PC 레이아웃(가운데 정렬)  ─────────────────── */
     @media (min-width:1024px){
-      #stageTitle,#stage,#finalPanel{width:var(--pc-width);left:50%;transform:translateX(-50%)}
-      #finalPanel{align-items:flex-start;padding-left:var(--pad-desk-h);padding-right:var(--pad-desk-h)}
-      #finalPanel h1,#finalPanel section{text-align:left;width:100%;max-width:none}
-      #backBtn,#homeBtnFP{left:calc(50% - var(--pc-width)/2)}
+      #stageTitle,#stage,#finalPanel{width:var(--pc-width);left:50%;transform:translateX(-50%);}
+      #finalPanel{align-items:flex-start;padding-left:var(--pad-desk-h);padding-right:var(--pad-desk-h);}
+      #finalPanel h1,#finalPanel section{text-align:left;width:100%;max-width:none;}
+      #backBtn,#homeBtnFP{left:calc(50% - var(--pc-width)/2);}
     }
   </style>
+
 
   <!-- ---------- SCRIPT ---------- -->
   <script type="module">
