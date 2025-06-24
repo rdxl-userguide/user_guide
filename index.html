@@ -52,6 +52,16 @@
       font-weight:700;cursor:pointer;z-index:1000;
     }
 
+    /* ───── "한 눈에 보기" 버튼 ───── */
+    #overviewBtn{
+      position:fixed;bottom:calc(18px + 48px);left:18px;
+      padding:var(--pad-home-v) var(--pad-home-h);
+      font-size:var(--fs-home);
+      border:none;border-radius:8px;
+      background:none;color:var(--color-green);font-weight:700;
+      cursor:pointer;z-index:1000;
+    }
+
     /* ───── 단계 영역 ───── */
     #stage{
       position:absolute;top:var(--stage-title-height);bottom:0;left:0;right:0;
@@ -98,25 +108,36 @@
     }
     #finalPanel.show{display:flex;opacity:1;}
 
-    /* 제목은 기존 1.8rem 유지 */
     #finalPanel h1{
-      width:90%;
-      max-width:960px;
-      margin:20px auto 12px;
-      font-size:2rem;            /* 기존 1.4rem → 2rem */
-      font-weight:700;
-      line-height:1.3;
-      color:var(--color-blue);
-      text-align:center;         /* 가운데 정렬 */
+      width:90%;max-width:960px;margin:20px auto 12px;
+      font-size:2rem;font-weight:700;line-height:1.3;color:var(--color-blue);
+      text-align:center;
     }
 
-    /* 본문을 제목과 같은 방식(1.8rem)으로 맞춤 */
     #finalPanel section{
-      width:90%;max-width:960px;margin:0 auto;
-      font-size:1.4rem;line-height:1.58;
+      width:90%;max-width:960px;margin:0 auto;font-size:1.4rem;line-height:1.58;
     }
     #finalPanel iframe{
       width:100%;aspect-ratio:16/9;border:1px solid #ccc;border-radius:8px;margin:0;
+    }
+
+    /* ───── 이미지 모달 ───── */
+    #imgModal{
+      position:fixed;inset:0;background:rgba(0,0,0,.8);
+      display:none;justify-content:center;align-items:center;
+      padding:24px;z-index:5000;
+    }
+    #imgModal.show{display:flex;}
+    #imgModal .modal-content{
+      position:relative;max-width:90vw;max-height:90vh;
+      overflow:auto;border-radius:8px;background:#fff;
+      box-shadow:0 4px 12px rgba(0,0,0,.3);
+    }
+    #imgModal img{width:100%;height:auto;display:block;}
+    #closeModal{
+      position:absolute;top:8px;right:8px;border:none;background:none;
+      font-size:1.8rem;font-weight:700;color:#fff;cursor:pointer;
+      filter:drop-shadow(0 0 2px #000);
     }
 
     /* ───── 모바일 세로 여백 ───── */
@@ -129,9 +150,8 @@
       #stageTitle,#stage,#finalPanel{width:var(--pc-width);left:50%;transform:translateX(-50%);}
       #finalPanel{align-items:flex-start;padding-left:var(--pad-desk-h);padding-right:var(--pad-desk-h);}
       #finalPanel h1,#finalPanel section{text-align:left;width:100%;max-width:none;}
-
-      /* HOME 버튼을 항상 화면의 가장 왼쪽(18px) 하단에 고정 */
       #backBtn{left:18px !important;}
+      #overviewBtn{left:18px;}
     }
   </style>
 
@@ -173,7 +193,7 @@
           desc : (r['프로세스 설명'] || '')
                   .replace(/•/g,'<br>•')
                   .replace(/\\n\\s*/g,'<br>'),
-          eg   : (r['예시'] || '').trim(),        // ★ 예시 보존
+          eg   : (r['예시'] || '').trim(),
           l1   : (r['신청 방법'] || '').trim(),
           l2   : L2_KEY ? (r[L2_KEY] || '').trim() : ''
         };
@@ -233,7 +253,6 @@
 
     /* ---------- render : 단계별 화면 출력 ---------- */
 
-    /* ───── 수정된 render ───── */
     function render (node) {
       node = auto(node);
       if (!node || stage.dataset.busy === '1') return;
@@ -343,30 +362,19 @@
 
     /* ---------- 상세 패널 ---------- */
     function show(d){
-      // 상단 단계 타이틀 숨김
       titleEl.style.display = 'none';
-
-      // 버튼 표시·숨김
       document.getElementById('backBtn').style.display = '';
       document.getElementById('homeBtnFP').style.display = 'none';
-
-      // 제목 출력
       document.getElementById('fpTitle').innerHTML = title(d);
 
-      // 주요 필드 정리
       const pay  = (d.pay  || '').trim();   // 결제수단
       const cash = (d.cash || '').trim();   // 금액범위
 
-      /* ───── 본문 조립 ───── */
       let html = `<p><b>승인권한 :</b> ${d.big || '-'}</p>`;
-
-      // 값이 있는 항목만 출력
       if (cash) html += `<p><b>금액범위 :</b> ${cash}</p>`;
       if (pay)  html += `<p><b>결제수단 :</b> ${pay}</p>`;
-
       html += '<hr>';
 
-      // 개인법인카드 안내문
       if (pay.includes('개인법인카드')){
         html += `
           <p style="margin-top:18px;font-weight:700;color:var(--color-blue)">
@@ -374,23 +382,17 @@
           </p>`;
       }
 
-      // 설명
       html += `<p>${d.desc}</p>`;
 
-      // 신청 매뉴얼
       if (d.l1){
         html += `<h3>신청 매뉴얼</h3><iframe src="${d.l1}" allowfullscreen></iframe>`;
       }
 
-      // 월말 지출승인요청서 매뉴얼
       if (pay.includes('개인법인카드') && d.l2){
         html += `<h3>월말 지출승인요청서 매뉴얼</h3><iframe src="${d.l2}" allowfullscreen></iframe>`;
       }
 
-      // 본문 반영
       document.getElementById('fpBody').innerHTML = html;
-
-      // 패널 표시 및 스크롤 초기화
       finalPanel.classList.add('show');
       scrollTopAll();
       adjustIframe();
@@ -422,10 +424,21 @@
     homeBtn.onclick = resetApp;
     homeBtnFP.onclick = resetApp;
 
+    /* ---------- "한 눈에 보기" 모달 이벤트 ---------- */
+    const modal = document.getElementById('imgModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    function openModal(){ modal.classList.add('show'); document.body.style.overflow='hidden'; }
+    function closeModal(){ modal.classList.remove('show'); document.body.style.overflow=''; }
+    document.getElementById('overviewBtn').addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+    window.addEventListener('keydown', e=>{ if(e.key==='Escape' && modal.classList.contains('show')) closeModal(); });
+
+    /* 초기 렌더 */
     render(tree);
     scrollTopAll();
   </script>
-  <!-- 폴리필 -->
+  <!-- ───── ESC·배경스크롤 polyfill ───── -->
   <script>
     if(!Array.prototype.at){
       Array.prototype.at=function(n){
@@ -445,10 +458,19 @@
   <div id="stageTitle" class="stage-title"></div>
   <div id="stage" data-busy="0"></div>
   <button id="backBtn">HOME</button>
+  <button id="overviewBtn">한 눈에 보기</button>
 
   <div id="finalPanel">
     <h1 id="fpTitle"></h1>
     <section id="fpBody"></section>
+  </div>
+
+  <!-- 이미지 모달 -->
+  <div id="imgModal" aria-hidden="true">
+    <div class="modal-content">
+      <button id="closeModal">✕</button>
+      <img src="https://img.notionusercontent.com/s3/prod-files-secure%2Fd55abcca-b062-42d8-81fc-6fe27327b5bb%2F262f8081-3f22-4c4a-bb85-5c9b7c26da06%2Fimage.png/size/w=2000?exp=1750760395&sig=fyLNNN371rq4RLHMciYtJEVhmMJ0KtapPJY9ivTzjvs&id=21cbb6cb-7fe1-80a4-86d6-d4fdd02d91f9&table=block&userId=a4656889-4c25-4610-b060-1a136fe2e52f" alt="Expense Rules Overview">
+    </div>
   </div>
 
   <!-- CSV 붙여넣기 -->
@@ -697,7 +719,6 @@
 • 진행 : 나하고 앱 > 증명서 신청
 • 예시 : 재직증명서, 경력증명서
 • 비고 : 1시간 내 미발급 시 HR담당자에게 슬랙 문의",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"재직증명서, 경력증명서"
-
 
   </script>
 </body>
