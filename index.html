@@ -52,7 +52,7 @@
       font-weight:700;cursor:pointer;z-index:1000;
     }
 
-    /* ───── "한 눈에 보기" 버튼 ───── */
+    /* ───── "한눈에 보기" 버튼 ───── */
     #overviewBtn{
       position:fixed;bottom:calc(18px + 48px);left:var(--pad-mob-h);
       padding:var(--pad-home-v) var(--pad-home-h);font-size:var(--fs-home);
@@ -60,7 +60,7 @@
       font-weight:700;cursor:pointer;z-index:1000;
     }
 
-    
+
 
     /* ───── 단계 영역 ───── */
     #stage{
@@ -424,7 +424,7 @@
     homeBtn.onclick = resetApp;
     homeBtnFP.onclick = resetApp;
 
-    /* ---------- "한 눈에 보기" 모달 이벤트 ---------- */
+    /* ---------- "한눈에 보기" 모달 이벤트 ---------- */
     const modal = document.getElementById('imgModal');
     const closeModalBtn = document.getElementById('closeModal');
     function openModal(){ modal.classList.add('show'); document.body.style.overflow='hidden'; }
@@ -458,7 +458,7 @@
   <div id="stageTitle" class="stage-title"></div>
   <div id="stage" data-busy="0"></div>
   <button id="backBtn">HOME</button>
-  <button id="overviewBtn">한 눈에 보기</button>
+  <button id="overviewBtn">한눈에 보기</button>
 
   <div id="finalPanel">
     <h1 id="fpTitle"></h1>
@@ -500,14 +500,14 @@
 임직원,비용 지출,일반 구매,100만원 미만,법인계좌이체(차선),"카드 결제가 불가한 100만원 미만 일반 구매는 지출품의서를 작성한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성  → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 일반
-• 결재라인 : 기안자 → 팀 리더 (전결 권한 위임자 : 부문리더, CEO)
+• 결재 라인 : 기안자 → 팀 리더 (전결 권한 위임자 : 부문리더, CEO)
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 수신 참조  : 경영기획팀, 업무관련자
 • 예시 : 공구류, 소형 가구, 소모성 재료비 등",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시
 임직원,비용 지출,일반 구매,100만원 이상,법인계좌이체,"100만원 이상 일반 구매는 지출품의서를 사전 작성하여 승인을 얻은 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 일반
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 수신 참조  : 경영기획팀, 업무관련자
 • 예시 : 가구, PC, 재료비 등",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"가구, PC, 재료비 등"
@@ -536,14 +536,14 @@
 임직원,비용 지출,회의비/접대비,100만원 미만,법인계좌이체(차선),"카드 결제가 어려운 100만원 미만 사내 회의비·사외 접대비는 지출품의서를 작성한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 (사후 작성 가능)  → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 사내 회의비/접대비
-• 결재라인 : 기안자 → 팀 리더 (전결 권한 위임자 : 부문리더, CEO)
+• 결재 라인 : 기안자 → 팀 리더 (전결 권한 위임자 : 부문리더, CEO)
 • 증빙 : 동석인원, 목적 명시
 • 수신 참조  : 업무관련자, 경영기획
 • 예시 : 야근 식사비(카드 한도 초과 시)",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시
 임직원,비용 지출,회의비/접대비,100만원 이상,개인 법인카드(우선순위),"100만원 이상 사내 회의비·사외 접대비는 지출품의서를 사전 작성하여 승인을 얻은 후 개인 법인카드로 결제하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 개인 법인카드 결제
 • 양식 : 라덱셀 양식> 지출품의서 – 사내 회의비/접대비
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 동석인원, 목적 명시, 업무 상 지출임을 명료하게 입증
 • 수신 참조  : 경영기획팀, 업무관련자
 • 예시 : 외부 고급 접대비
@@ -568,7 +568,7 @@
 임직원,비용 지출,회의비/접대비,100만원 이상,법인계좌이체(차선),"100만원 이상 사내 회의비·사외 접대비는 법인계좌이체로 결제하기 전에 지출품의서를 사전 작성해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 사내 회의비/접대비
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 동석인원, 목적 명시, 업무 상 지출임을 명료하게 입증
 • 수신 참조  : 경영기획팀, 업무관련자
 • 예시 : 외부 고급 접대비",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시
@@ -597,21 +597,21 @@
 임직원,비용 지출,외주용역·자문료,100만원 미만,법인계좌이체(차선),"100만원 미만 외주용역·자문료는 지출품의서를 작성하여 승인을 득한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 외주용역/자문
-• 결재라인 : 기안자 → 팀 리더 (전결 권한 위임자 : 부문리더, CEO)
+• 결재 라인 : 기안자 → 팀 리더 (전결 권한 위임자 : 부문리더, CEO)
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
 • 예시 : 단기 외주 용역 비용",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,단기 외주 용역 비용(카드 사용이 불가할 시)
 임직원,비용 지출,외주용역·자문료,100만원 이상,법인계좌이체,"100만원 이상의 외주용역·자문료는 지출품의서를 작성하여 승인을 득한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 외주용역/자문
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
 • 예시 : 장기 컨설팅 계약비",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,장기 컨설팅 계약비
 임직원,비용 지출,교육비,금액무관,개인 법인카드(우선순위),"금액과 무관하게 교육비는 지출품의서를 먼저 작성하여 승인을 얻은 후 개인 법인카드로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 → 최종 결재 획득 → 개인 법인카드 결제
 • 양식 : 라덱셀 양식 > 지출품의서 – 교육비
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 교육 견적서·계약서 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
 • 예시 : 단기 워크숍, 온라인 강의
@@ -636,15 +636,15 @@
 임직원,비용 지출,교육비,금액무관,법인계좌이체(차선),"카드 결제가 불가한 교육비는 금액과 무관하게 지출품의서를 먼저 작성하여 CEO 승인을 얻은 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금 담당자 계좌이체
 • 양식 : 라덱셀 양식 > 지출품의서 – 교육비
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 교육 견적서·계약서 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
 • 예시 : 장기 연수 프로그램, 직무 온라인 강의 등",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"장기 연수 프로그램, 카드 사용이 불가할 시"
 임직원,비용 지출,업무툴·소프트웨어,금액무관,SW카드,"금액과 무관하게 업무툴·소프트웨어는 지출품의서를 먼저 작성하여 CEO 승인을 얻은 후 SW카드로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 → 최종 결재 획득 → SW카드 결제
-   * SW카드(무기명)로 결제가 안되는 경우, 개인 법인카드(기명)로 결제합니다.
+   * SW카드(무기명)로 결제가 안 되는 경우, 개인 법인카드(기명)로 결제합니다.
 • 양식 : 라덱셀 양식 > 지출품의서 – 소프트웨어
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 라이선스 계약서 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
 • 예시 : SaaS 구독, 개발툴 라이선스",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"SaaS 구독료, 개발툴 라이선스"
@@ -680,10 +680,10 @@
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
    위 항목들은 특별히 지출 승인 요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"당일 외근, 대전 1박 2일 출장"
-임직원,출장,출장,그 외의 출장,"개인 법인카드 우선 / 법인계좌이체가 차선 / 현금 결재가 최후의 수단
+임직원,출장,출장,그 외의 출장,"개인 법인카드 우선 / 법인계좌이체가 차선 / 현금 결제가 최후의 수단
 ","육로 이동이 아니거나, 1박 2일을 초과하는 출장은 출장품의서를 먼저 작성하여야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 위하고 근태관리 > 출장신청
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 여비/증빙 : <a href='https://file.notion.so/f/f/d55abcca-b062-42d8-81fc-6fe27327b5bb/7ba9bac2-c870-42c3-b1fe-0517351e5bfb/%EC%B6%9C%EC%9E%A5_%EA%B7%9C%EC%A0%95(20250618).pdf?table=block&id=217bb6cb-7fe1-80e6-9831-d868dc07d948&spaceId=d55abcca-b062-42d8-81fc-6fe27327b5bb&expirationTimestamp=1750780048952&signature=6Uqib-tp3_rv684gXkSjP602HtLqyISrq7ZHgSbQnfM&downloadName=%EC%B6%9C%EC%9E%A5+%EA%B7%9C%EC%A0%95%2820250618%29.pdf' target='_blank'>출장규칙</a> 참고
 • 수신 참조  : 업무관련자, 경영기획팀
 • 예시 : 1주일간의 제주도 출장, 해외 출장
@@ -707,11 +707,11 @@
    위 항목들은 특별히 지출 승인 요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"해외 출장, 장기 국내 출장"
 임직원,휴가,휴가,,,"기간과 관계없이 휴가는 근태관리 시스템에서 신청하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 근태관리 시스템 > 휴가 신청
-• 결재라인 : 기안자 →  직속 리더 (전결 권한 위임자 : 부문리더, CEO)
+• 결재 라인 : 기안자 → 직속 리더 (전결 권한 위임자 : 부문리더, CEO)
 • 예시 : 연차, 반차",팀장 승인 사항, https://app.supademo.com/embed/cm9164cwo1phweyp0roo785gu?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"연차, 반차"
 임직원,인사변동(휴직 등),휴직/복직/사직,,,"기간과 관계없이 휴직/복직/사직은 신청서를 통해 CEO 승인을 얻은 후 진행 절차를 따라야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 양식 : 라덱셀 양식 > 휴직신청서/사직서 작성
-• 결재라인 : 기안자 → 팀 리더 → 부문리더 → CEO
+• 결재 라인 : 기안자 → 팀 리더 → 부문리더 → CEO
 • 증빙 : 휴직 사유서, 사직 사유서
 • 예시 : 육아휴직, 퇴사",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"육아휴직, 사직"
 임직원,증명서 발급,증명서 발급,,,"재직·경력·소득 증명서는 ‘나하고’ 앱에서 신청하면 HR팀이 승인 후 발급합니다.
