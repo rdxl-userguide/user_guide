@@ -100,9 +100,16 @@
 
     /* 제목은 기존 1.8rem 유지 */
     #finalPanel h1{
-      width:90%;max-width:960px;margin:20px auto 12px;
-      font-size:1.4rem;font-weight:700;color:var(--color-blue);line-height:1.3;
+      width:90%;
+      max-width:960px;
+      margin:20px auto 12px;
+      font-size:2rem;            /* 기존 1.4rem → 2rem */
+      font-weight:700;
+      line-height:1.3;
+      color:var(--color-blue);
+      text-align:center;         /* 가운데 정렬 */
     }
+
     /* 본문을 제목과 같은 방식(1.8rem)으로 맞춤 */
     #finalPanel section{
       width:90%;max-width:960px;margin:0 auto;
@@ -122,7 +129,9 @@
       #stageTitle,#stage,#finalPanel{width:var(--pc-width);left:50%;transform:translateX(-50%);}
       #finalPanel{align-items:flex-start;padding-left:var(--pad-desk-h);padding-right:var(--pad-desk-h);}
       #finalPanel h1,#finalPanel section{text-align:left;width:100%;max-width:none;}
-      #backBtn,#homeBtnFP{left:calc(50% - var(--pc-width)/2);}
+
+      /* HOME 버튼을 항상 화면의 가장 왼쪽(18px) 하단에 고정 */
+      #backBtn{left:18px !important;}
     }
   </style>
 
@@ -363,32 +372,61 @@
     }
     window.addEventListener('resize', adjustIframe);
 
+    /* ---------- 상세 패널 ---------- */
     function show(d){
+      // 상단 단계 타이틀 숨김
       titleEl.style.display = 'none';
 
+      // 버튼 표시·숨김
       document.getElementById('backBtn').style.display = '';
       document.getElementById('homeBtnFP').style.display = 'none';
 
+      // 제목 출력
       document.getElementById('fpTitle').innerHTML = title(d);
-      const pay = d.pay || '';
-      document.getElementById('fpBody').innerHTML = `
-        <p><b>대분류 :</b> ${d.big||'-'}</p>
-        <p><b>금액범위 :</b> ${d.cash||'-'}</p>
-        <p><b>결제수단 :</b> ${pay||'-'}</p><hr>
-        ${pay.includes('개인법인카드')?`
-          <p style="margin-top:18px;font-weight:700;color:var(--color-blue)">
-            # 개인법인카드를 1번이라도 사용한 경우, 매월말에 지출건을 모아 지출승인요청서를 작성합니다.
-          </p>`:''}
-        <p>${d.desc}</p>
-        ${d.l1?`<h3>신청 매뉴얼</h3><iframe src="${d.l1}" allowfullscreen></iframe>`:''}
-        ${pay.includes('개인법인카드')&&d.l2?`
-          <h3>월말 지출승인요청서 매뉴얼</h3><iframe src="${d.l2}" allowfullscreen></iframe>`:''}
-      `;
 
+      // 주요 필드 정리
+      const pay  = (d.pay  || '').trim();   // 결제수단
+      const cash = (d.cash || '').trim();   // 금액범위
+
+      /* ───── 본문 조립 ───── */
+      let html = `<p><b>승인권한 :</b> ${d.big || '-'}</p>`;
+
+      // 값이 있는 항목만 출력
+      if (cash) html += `<p><b>금액범위 :</b> ${cash}</p>`;
+      if (pay)  html += `<p><b>결제수단 :</b> ${pay}</p>`;
+
+      html += '<hr>';
+
+      // 개인법인카드 안내문
+      if (pay.includes('개인법인카드')){
+        html += `
+          <p style="margin-top:18px;font-weight:700;color:var(--color-blue)">
+            # 개인법인카드를 1번이라도 사용했다면, 월말에 지출건을 모아 지출승인요청서를 작성해야 됩니다.
+          </p>`;
+      }
+
+      // 설명
+      html += `<p>${d.desc}</p>`;
+
+      // 신청 매뉴얼
+      if (d.l1){
+        html += `<h3>신청 매뉴얼</h3><iframe src="${d.l1}" allowfullscreen></iframe>`;
+      }
+
+      // 월말 지출승인요청서 매뉴얼
+      if (pay.includes('개인법인카드') && d.l2){
+        html += `<h3>월말 지출승인요청서 매뉴얼</h3><iframe src="${d.l2}" allowfullscreen></iframe>`;
+      }
+
+      // 본문 반영
+      document.getElementById('fpBody').innerHTML = html;
+
+      // 패널 표시 및 스크롤 초기화
       finalPanel.classList.add('show');
       scrollTopAll();
       adjustIframe();
     }
+
 
     /* HOME 버튼 */
     const homeBtn = document.getElementById('backBtn');
@@ -418,9 +456,6 @@
     render(tree);
     scrollTopAll();
   </script>
-
-
-
   <!-- 폴리필 -->
   <script>
     if(!Array.prototype.at){
@@ -435,7 +470,6 @@
       };
     }
   </script>
-
   <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
@@ -450,8 +484,43 @@
 
   <!-- CSV 붙여넣기 -->
   <script id="csvData" type="text/csv">
-분류1,분류2,분류3,분류4,분류5,프로세스 설명,대분류,신청 방법,매월말 지출승인요청서 신청방법 : 개인법인카드를 한번이라도 사용한 이력이 있으면 작성,예시,
-임직원,비용 지출,회의비/접대비,100만원 미만,개인법인카드(우선순위),"100만원 미만 사내 회의비·사외 접대비은 팀리더 구두 승인 후 개인법인카드로 결제하고 월말에 월간지출승인요청서만 작성하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
+분류1,분류2,분류3,분류4,분류5,프로세스 설명,대분류,신청 방법,매월말 지출승인요청서 신청방법 : 개인법인카드를 한번이라도 사용한 이력이 있으면 작성,예시
+임직원,비용 지출,일반 구매,100만원 미만,개인법인카드(우선순위),"100만원 미만 일반 구매는 팀리더 구두 승인 후 개인법인카드로 결제하고 월말에 월간지출승인요청서만 작성하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
+• 진행 : 지출품의서 생략 → 월말 지출승인요청서만 작성
+• 예시 : 문구류, 소모성 부품 등
+
+<br>  <br> <b><지출승인요청서 작성 시 참고사항></b>
+• 승인되지 않은 전체 내역을 한번에 선택하여 기안합니다. 월별로 나누어 기안할 필요는 없습니다.<br>
+&nbsp;&nbsp;&nbsp;예 : 4월 결제 건이 5월로 넘어온 경우 - 월별로 나누어 기안하지 않고, 모두 모아서 5월에 일괄 기안<br>
+<br>
+<b><법인카드 사용 시 주의사항></b><br>
+다음의 항목은 세무당국에서 특별히 확인하는 사항이므로 사용 시 특별히 주의해주시기 바랍니다. <br>
+1. 상세거래내역(구매 품목, 수량, 단가, 금액 등)이 명시된 영수증이 필요한 경우<br>
+   &nbsp;&nbsp;&nbsp;✔️ 백화점/마트 <br>
+   &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
+   &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
+   &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
+   &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
+   &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
+   &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"재료비, 공구류, 문구류, 가구 등"
+임직원,비용 지출,일반 구매,100만원 미만,법인계좌이체(차선),"카드결제가 불가한 100만원 미만 일반 구매는 지출품의서를 작성한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
+• 진행 : 지출품의서 작성  → 자금담당자 계좌이체
+• 양식 : 라덱셀 양식> 지출품의서 – 일반
+• 결재라인 : 기안자 → 팀리더 (전결 권한 위임자 : 부문리더, CEO)
+• 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
+• 수신 참조  : 경영기획팀, 업무관련자
+• 예시 : 공구류, 소형 가구, 소모성 재료비 등",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시
+임직원,비용 지출,일반 구매,100만원 이상,법인계좌이체,"100만원 이상 일반 구매는 지출품의서를 사전 작성하여 승인을 얻은 후 법인카드로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
+• 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금담당자 계좌이체
+• 양식 : 라덱셀 양식> 지출품의서 – 일반
+• 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
+• 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
+• 수신 참조  : 경영기획팀, 업무관련자
+• 예시 : 가구, PC, 재료비 등",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"가구, PC, 재료비 등"
+임직원,비용 지출,회의비/접대비,100만원 미만,개인법인카드(우선순위),"100만원 미만 사내 회의비·사외 접대비은 팀리더 구두 승인 후 개인법인카드로 결제하고 월말에 월간지출승인요청서만 작성하면 됩니다. 구체적인 가이드는 아래를 참고하세요. <br>
 • 진행 : 지출품의서 생략 → 월말 지출승인요청서만 작성
 • 증빙 : 월말 지출승인요청서에 동석인원·목적 명시
 • 예시 : 야근 식사비, 팀 회식비, 협력업체 식사비
@@ -467,21 +536,21 @@
    &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
    &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
    &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
 2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"야근 식사비, 팀 회식비, 협력업체 식사비",
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"팀 회식비, 야근 식사비, 협력업체 식사비"
 임직원,비용 지출,회의비/접대비,100만원 미만,법인계좌이체(차선),"카드결제가 어려운 100만원 미만 사내 회의비·사외 접대비는 지출품의서를 작성한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 (사후 작성 가능)  → 자금담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 사내 회의비/접대비
 • 결재라인 : 기안자 → 팀리더 (전결 권한 위임자 : 부문리더, CEO)
 • 증빙 : 동석인원, 목적 명시
 • 수신 참조  : 업무관련자, 경영기획
-• 예시 : 야근 식사비(카드 한도 초과 시)",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시,
-임직원,비용 지출,회의비/접대비,100만원 이상,개인법인카드(우선순위),"100만원 이상 사내 회의비·사외 접대비는 지출품의서를 사전 작성하여 승인을 얻은 후 개인법인카드로 결제하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
-• 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 개인법인카드 결제
+• 예시 : 야근 식사비(카드 한도 초과 시)",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시
+임직원,비용 지출,회의비/접대비,100만원 이상,개인법인카드(우선순위),"100만원 이상 사내 회의비·사외 접대비는 지출품의서를 사전 작성하여 승인을 얻은 후 개인법인카드로 결재하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
+• 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 개인법인카드 결재
 • 양식 : 라덱셀 양식> 지출품의서 – 사내 회의비/접대비
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
 • 증빙 : 동석인원, 목적 명시, 업무 상 지출임을 명료하게 입증
@@ -499,55 +568,20 @@
    &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
    &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
    &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
 2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,외부 고급 접대비,
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,외부 고급 접대비
 임직원,비용 지출,회의비/접대비,100만원 이상,법인계좌이체(차선),"100만원 이상 사내 회의비·사외 접대비는 법인계좌이체로 결제하기 전에 지출품의서를 사전 작성해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 사내 회의비/접대비
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
 • 증빙 : 동석인원, 목적 명시, 업무 상 지출임을 명료하게 입증
 • 수신 참조  : 경영기획팀, 업무관련자
-• 예시 : 외부 고급 접대비",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시,
-임직원,비용 지출,일반 구매,100만원 미만,개인법인카드(우선순위),"100만원 미만 일반 구매는 팀리더 구두 승인 후 개인법인카드로 결제하고 월말에 월간지출승인요청서만 작성하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
-• 진행 : 지출품의서 생략 → 월말 지출승인요청서만 작성
-• 예시 : 문구류, 소모성 부품 등
-
-<br>  <br> <b><지출승인요청서 작성 시 참고사항></b>
-• 승인되지 않은 전체 내역을 한번에 선택하여 기안합니다. 월별로 나누어 기안할 필요는 없습니다.<br>
-&nbsp;&nbsp;&nbsp;예 : 4월 결제 건이 5월로 넘어온 경우 - 월별로 나누어 기안하지 않고, 모두 모아서 5월에 일괄 기안<br>
-<br>
-<b><법인카드 사용 시 주의사항></b><br>
-다음의 항목은 세무당국에서 특별히 확인하는 사항이므로 사용 시 특별히 주의해주시기 바랍니다. <br>
-1. 상세거래내역(구매 품목, 수량, 단가, 금액 등)이 명시된 영수증이 필요한 경우<br>
-   &nbsp;&nbsp;&nbsp;✔️ 백화점/마트 <br>
-   &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
-   &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
-   &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
-2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"문구류, 공구류, 소형 가구, 소모성 재료비",
-임직원,비용 지출,일반 구매,100만원 미만,법인계좌이체(차선),"카드결제가 불가한 100만원 미만 일반 구매는 지출품의서를 작성한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
-• 진행 : 지출품의서 작성  → 자금담당자 계좌이체
-• 양식 : 라덱셀 양식> 지출품의서 – 일반
-• 결재라인 : 기안자 → 팀리더 (전결 권한 위임자 : 부문리더, CEO)
-• 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
-• 수신 참조  : 경영기획팀, 업무관련자
-• 예시 : 공구류, 소형 가구, 소모성 재료비 등",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시,
-임직원,비용 지출,일반 구매,100만원 이상,법인계좌이체,"100만원 이상 일반 구매는 지출품의서를 사전 작성하여 승인을 얻은 후 법인카드로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
-• 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금담당자 계좌이체
-• 양식 : 라덱셀 양식> 지출품의서 – 일반
-• 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
-• 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
-• 수신 참조  : 경영기획팀, 업무관련자
-• 예시 : 가구, PC, 재료비 등",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"가구, PC, 재료비 등",
-임직원,비용 지출,외주용역·자문료,100만원 미만,개인법인카드(우선순위),"카드결제가 가능한 100만원 미만 외주용역·자문료는 팀장 승인을 득한 후 개인법인카드로 결제하고 월말에 월간지출승인요청서만 작성하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
+• 예시 : 외부 고급 접대비",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,카드 사용이 불가할 시
+임직원,비용 지출,외주용역·자문료,100만원 미만,개인법인카드(우선순위),"카드결제가 가능한 100만원 미만 외주용역·자문료는 팀장 구두 승인을 득한 후 개인법인카드로 결제하고 월말에 월간지출승인요청서만 작성하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 생략 → 월말 지출승인요청서 작성
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 예시 : 단기 외부 컨설턴트 자문료
@@ -563,26 +597,26 @@
    &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
    &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
    &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
 2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,단기 외부 컨설턴트 자문료,
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"외부 컨설턴트 자문, 외주용역 계약"
 임직원,비용 지출,외주용역·자문료,100만원 미만,법인계좌이체(차선),"100만원 미만 외주용역·자문료은 지출품의서를 작성하여 승인을 득한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 → 자금담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 외주용역/자문
 • 결재라인 : 기안자 → 팀리더 (전결 권한 위임자 : 부문리더, CEO)
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
-• 예시 : 단기 외주 용역 비용",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,단기 외주 용역 비용(카드 사용이 불가할 시),
+• 예시 : 단기 외주 용역 비용",팀장 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,단기 외주 용역 비용(카드 사용이 불가할 시)
 임직원,비용 지출,외주용역·자문료,100만원 이상,법인계좌이체,"100만원 이상의 외주용역·자문료는 지출품의서를 작성하여 승인을 득한 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금담당자 계좌이체
 • 양식 : 라덱셀 양식> 지출품의서 – 외주용역/자문
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 견적서·계약서·청구서 등 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
-• 예시 : 장기 컨설팅 계약비",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,장기 컨설팅 계약비,
+• 예시 : 장기 컨설팅 계약비",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,장기 컨설팅 계약비
 임직원,비용 지출,교육비,금액무관,개인법인카드(우선순위),"금액과 무관하게 교육비는 지출품의서를 먼저 작성하여 승인을 얻은 후 개인법인카드로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 → 최종 결재 획득 → 개인법인카드 결제
 • 양식 : 품의서 라덱셀> 지출품의서 – 교육비
@@ -602,19 +636,19 @@
    &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
    &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
    &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
 2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"단기 워크숍, 온라인 강의",
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"워크숍, 온라인 강의"
 임직원,비용 지출,교육비,금액무관,법인계좌이체(차선),"카드결제가 불가한 교육비는 금액과 무관하게 지출품의서를 먼저 작성하여 CEO 승인을 얻은 후 법인계좌이체로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 사전 지출품의서 작성 → 최종 결재 획득 → 자금담당자 계좌이체
 • 양식 : 품의서 라덱셀> 지출품의서 – 교육비
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 교육 견적서·계약서 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
-• 예시 : 장기 연수 프로그램, 직무 온라인 강의 등",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"장기 연수 프로그램, 카드 사용이 불가할 시",
+• 예시 : 장기 연수 프로그램, 직무 온라인 강의 등",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"장기 연수 프로그램, 카드 사용이 불가할 시"
 임직원,비용 지출,업무툴·소프트웨어,금액무관,SW카드,"금액과 무관하게 업무툴·소프트웨어는 지출품의서를 먼저 작성하여 CEO 승인을 얻은 후 SW카드로 결제해야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 지출품의서 작성 → 최종 결재 획득 → SW카드 결제
    * SW카드(무기명)로 결제가 안되는 경우, 개인법인카드(기명)로 결제합니다.
@@ -622,15 +656,15 @@
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
 • 증빙 : 금액이 명시된 라이선스 계약서 첨부
 • 수신 참조  : 업무관련자, 경영기획팀
-• 예시 : SaaS 구독료, 개발툴 라이선스",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"SaaS 구독료, 개발툴 라이선스",
-임직원,비용 지출,"다과, 소액 사무용품",금액무관,다과카드,"다과(쿠팡·간식 서비스·카페), 10만원 이하의 소액 사무용품은 일반 구매 절차를 따라 팀장 승인하에 개인법인카드로 구매해도 되고, 간편하게 별도의 승인과정없이 슬랙 채널로 요청하셔도 됩니다.  구체적인 가이드는 아래를 참고하세요.
+• 예시 : SaaS 구독, 개발툴 라이선스",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"SaaS 구독료, 개발툴 라이선스"
+임직원,비용 지출,"다과, 소액 사무용품",금액무관,다과카드,"다과(쿠팡·간식 서비스·카페), 10만원 이하의 소액 사무용품은 일반 구매 절차를 따라 팀장 구두 승인 하에 개인법인카드로 구매해도 되고, 간편하게 별도의 승인과정없이 슬랙 채널로 요청하셔도 됩니다.  구체적인 가이드는 아래를 참고하세요.
 • 진행 : 슬랙 ‘구매요청’ → 자금담당자 일괄 결제
-• 예시 : 콜라, 캡슐커피볼펜, 메모지, 케이블 등",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"콜라, 캡슐커피볼펜, 메모지, 케이블",
+• 예시 : 콜라, 캡슐커피, 케이블 등",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"콜라, 캡슐커피, 케이블"
 임직원,비용 지출,현금 소액잡비,금액무관,법인계좌이체,"3만원 이하의 카드계산이 불가한 잡비는 별도 승인과정 없이, 자금담당자에게 요청하여 법인계좌이체로 결제하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 승인 생략
 • 증빙 : 현금영수증 등
 • 예시 : 화물 용달비
-• 비고 : 종이 영수증 (간이 영수증 포함)이 발생하는 경우 사무실 별로 비치된 영수증함에 넣어주세요.",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,화물 용달비,
+• 비고 : 종이 영수증 (간이 영수증 포함)이 발생하는 경우 사무실 별로 비치된 영수증함에 넣어주세요.",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,화물 용달비
 임직원,출장,출장,"육로, 1박 2일 이내의 출장",유류비·통행료: 자비로 지출 후 실비지급 / 그 외: 개인법인카드,"육로, 1박 2일 이내의 출장 출장은 별도의 출장신청이 필요없으며, 팀리더 구두 승인하에 진행하시면 됩니다. 출장중 발생한 여비는 일반구매절차에 따르면 됩니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 출장품의서 생략
 • 여비 : 유류비, 통행료의 경우 자비로 지출한 후 월말 지출승인요청서로 청구
@@ -648,13 +682,13 @@
    &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
    &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
    &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
 2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"당일 외근, 대전 1박 2일 출장",
-임직원,출장,출장,그 외의 출장,"개인법인카드 우선 / 법인계좌이체가 차선 / 현금 결제가 최후의 수단
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",팀장 승인 사항,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"당일 외근, 대전 1박 2일 출장"
+임직원,출장,출장,그 외의 출장,"개인법인카드 우선 / 법인계좌이체가 차선 / 현금 결재가 최후의 수단
 ","육로 이동이 아니거나, 1박 2일을 초과하는 출장은 출장품의서를 먼저 작성하여야 합니다.구체적인 가이드는 아래를 참고하세요.
 • 진행 : 위하고 근태관리 > 출장신청
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
@@ -674,26 +708,26 @@
    &nbsp;&nbsp;&nbsp;✔️ 고급술집/골프장 <br>
    &nbsp;&nbsp;&nbsp;✔️ 병의원,약국 <br>
    &nbsp;&nbsp;&nbsp;✔️ 해외 출장 등 법인카드 사용이 제한되어 현금으로 지출한 경우 : 간이 영수증 수취 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
+   위 항목들은 상세거래내역이 명시된 영수증을 사무실 별로 비치된 영수증함에 넣어주시고 자금담당자에게 말씀해주시기 바랍니다.<br>
 2. 반드시 필요한 경우에만 사용하고, 전자 문서로 업무 경비임을 증명하는 증빙을 상세히 남겨야 하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 업무 시간 외 주말, 공휴일, 심야/새벽에 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 동일한 거래처에서 여러 차례 분할 사용하는 경우 <br>
    &nbsp;&nbsp;&nbsp;✔️ 현금화가 쉬운 사치성 물품(귀금속, 주류, 골프용품 등)을 구매하는 경우 <br>
-   &nbsp;&nbsp;&nbsp;위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"해외 출장, 장기 국내 출장",
+   위 항목들은 특별히 지출승인요청서 작성 시 사용목적과 증빙자료를 첨부해주시기 바랍니다.<br> ",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"해외 출장, 장기 국내 출장"
 임직원,휴가,휴가,,,"기간과 관계없이 휴가는 근태관리 시스템에서 신청하면 됩니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 근태관리 시스템 > 휴가신청
 • 결재라인 : 기안자 →  직속리더 (전결 권한 위임자 : 부문리더, CEO)
-• 예시 : 연차, 반차",팀장 승인 사항, https://app.supademo.com/embed/cm9164cwo1phweyp0roo785gu?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"연차, 반차",
+• 예시 : 연차, 반차",팀장 승인 사항, https://app.supademo.com/embed/cm9164cwo1phweyp0roo785gu?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"연차, 반차"
 임직원,인사변동(휴직 등),휴직/복직/사직,,,"기간과 관계없이 휴직/복직/사직은 신청서를 통해 CEO승인을 얻은 후 진행절차를 따라야 합니다. 구체적인 가이드는 아래를 참고하세요.
 • 진행 : 라덱셀양식 > 휴직신청서/사직서 작성
 • 양식 : 라덱셀> 휴직신청서/사직서 작성
 • 결재라인 : 기안자 → 팀리더 → 부문리더 → CEO
 • 증빙 : 휴직 사유서, 사직 사유서
-• 예시 : 육아휴직, 퇴사",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"육아휴직, 사직",
+• 예시 : 육아휴직, 퇴사",CEO 승인 사항,https://app.supademo.com/embed/cm918m28p1rigeyp0ni07t0et?embed_v=2,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"육아휴직, 사직"
 임직원,증명서 발급,증명서 발급,,,"재직·경력·소득 증명서는 ‘나하고’ 앱에서 신청하면 HR팀이 승인 후 발급합니다.
 • 진행 : 나하고 앱 > 증명서 신청
 • 예시 : 재직증명서, 경력증명서
-• 비고 : 1시간 내 미발급 시 HR담당자에게 슬랙 문의",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"재직증명서, 경력증명서",
+• 비고 : 1시간 내 미발급 시 HR담당자에게 슬랙 문의",승인 불필요,,https://app.supademo.com/embed/cm8woiw0c0sybdmompggdzkmh?embed_v=2,"재직증명서, 경력증명서"
 
 
   </script>
