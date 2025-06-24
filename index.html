@@ -387,6 +387,9 @@
       if (pay)  html += `<p><b>결제수단 :</b> ${pay}</p>`;
       html += '<hr>';
 
+
+
+      html += `<p>${d.desc}</p>`;
       if (pay.includes('개인 법인카드')){
         html += `
           <p style="margin-top:18px;font-weight:700;color:var(--color-blue)">
@@ -394,9 +397,6 @@
             # 개인 법인카드로 잘못 결제했을 경우, 오사용 금액은 회사계좌로 이체되어야 합니다. 이 경우, 자금 담당자에게 즉시 알려주시기 바랍니다.
           </p>`;
       }
-
-      html += `<p>${d.desc}</p>`;
-
       if (d.l1){
         html += `<h3>신청 매뉴얼</h3><iframe src="${d.l1}" allowfullscreen></iframe>`;
       }
