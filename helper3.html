@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>WEHAGO 양식 생성기 (Excel 연동 v4.0)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary-color: #5a67d8; --primary-hover: #4c51bf; --border-color: #e2e8f0; --background-light: #f7fafc; --background-white: #ffffff; --text-dark: #2d3748; --text-light: #718096; }
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--background-light); margin: 0; padding: 2rem; }
+        .container { max-width: 900px; margin: 20px auto; }
+        h1 { font-size: 2rem; color: var(--text-dark); text-align: center; margin-bottom: 2.5rem; }
+        .section { background: var(--background-white); padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); margin-bottom: 2rem; }
+        h2 { font-size: 1.25rem; color: var(--text-dark); margin-top: 0; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        label { font-weight: 500; font-size: 0.875rem; color: var(--text-light); display: block; margin-bottom: 0.5rem; }
+        input, select { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; box-sizing: border-box; font-family: inherit; }
+        input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.15); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        .button {
+            display: inline-block; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; color: white;
+            background-color: var(--primary-color); border: none; border-radius: 0.5rem; cursor: pointer; text-align: center;
+        }
+        .button:hover { background-color: var(--primary-hover); }
+        .item-card { background-color: var(--background-light); border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .item-header h3 { margin: 0; font-size: 1.1rem; }
+        .remove-item-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); line-height: 1; }
+        .copy-feedback { text-align: center; color: var(--primary-color); font-weight: 600; margin-top: 1rem; opacity: 0; transition: opacity 0.5s; height: 24px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>WEHAGO 양식 생성기 💡</h1>
+
+    <div class="section">
+        <h2>1. 양식 선택 및 공통 정보</h2>
+        <div class="grid" id="common-inputs-container">
+            <div>
+                <label for="formType">양식 종류 (엑셀 파일에서 불러옴)</label>
+                <select id="formType"></select>
+            </div>
+        </div>
+        <button id="apply-common-btn" class="button" style="margin-top: 1rem;">[↓] 모든 항목에 공통 정보 적용</button>
+    </div>
+
+    <div class="section">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>2. 세부 항목 입력</h2>
+            <button id="add-item-btn" class="button" style="background-color:#64748b;">[+] 항목 추가</button>
+        </div>
+        <div id="items-container" style="margin-top: 1.5rem;"></div>
+    </div>
+    
+    <button id="copyBtn" class="button" style="width:100%; padding: 1rem; font-size: 1.2rem;">🚀 최종 양식 생성 및 복사</button>
+    <div id="copyFeedback">✅ 복사 완료! WEHAGO에 붙여넣으세요.</div>
+</div>
+
+<script>
+    let formTemplates = {};
+    let items = [{}];
+    let currentFormType = '';
+
+    const commonInputsContainer = document.getElementById('common-inputs-container');
+    const itemsContainer = document.getElementById('items-container');
+    const formTypeSelect = document.getElementById('formType');
+
+    async function loadExcelData() {
+        try {
+            const url = './format.xlsx'; // 같은 폴더에 있는 'format.xlsx' 파일을 가리킵니다.
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, {type: 'array'});
+
+            formTemplates = {};
+            workbook.SheetNames.forEach(sheetName => {
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                formTemplates[sheetName] = {
+                    title: sheetName,
+                    fields: jsonData.slice(1).map(row => ({
+                        id: row[0],
+                        label: row[1],
+                        common: row[2] && row[2].toLowerCase() === 'common'
+                    }))
+                };
+            });
+            
+            // Populate form type selector
+            formTypeSelect.innerHTML = Object.keys(formTemplates).map(name => `<option value="${name}">${name}</option>`).join('');
+            currentFormType = workbook.SheetNames[0];
+            formTypeSelect.value = currentFormType;
+            render();
+
+        } catch (error) {
+            console.error("엑셀 파일 로딩 실패:", error);
+            alert("'format.xlsx' 파일을 찾을 수 없거나 읽는 데 실패했습니다. 동일한 폴더에 파일이 있는지 확인해주세요.");
+        }
+    }
+
+    function render() {
+        if (!currentFormType || !formTemplates[currentFormType]) return;
+        const template = formTemplates[currentFormType];
+
+        // Render Common Inputs (excluding the main type selector)
+        let commonHtml = '';
+        template.fields.filter(f => f.common).forEach(field => {
+            commonHtml += `<div><label for="common_${field.id}">${field.label}</label><input type="text" id="common_${field.id}"></div>`;
+        });
+        // Clear previous and add new ones, keeping the formType selector
+        const existingFormType = commonInputsContainer.querySelector('#formType').parentElement;
+        commonInputsContainer.innerHTML = '';
+        commonInputsContainer.appendChild(existingFormType);
+        commonInputsContainer.innerHTML += commonHtml;
+
+
+        // Render Item Cards
+        itemsContainer.innerHTML = '';
+        items.forEach((itemData, index) => {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.dataset.index = index;
+            const itemFields = template.fields.filter(f => !f.common);
+            
+            card.innerHTML = `
+                <div class="item-header">
+                    <h3>항목 ${index + 1}</h3>
+                    ${items.length > 1 ? `<button class="remove-item-btn" title="항목 삭제">×</button>` : ''}
+                </div>
+                <div class="grid">${itemFields.map(field => {
+                    const fieldId = `${field.id}_${index}`;
+                    const value = itemData[field.id] || '';
+                    return `<div><label for="${fieldId}">${field.label}</label><input type="text" id="${fieldId}" value="${value}"></div>`;
+                }).join('')}</div>`;
+            itemsContainer.appendChild(card);
+        });
+    }
+
+    // Event Delegation for dynamic elements
+    document.addEventListener('change', e => {
+        if (e.target.id === 'formType') {
+            currentFormType = e.target.value;
+            items = [{}];
+            render();
+        }
+    });
+
+    document.getElementById('apply-common-btn').addEventListener('click', () => {
+        const commonFields = formTemplates[currentFormType].fields.filter(f => f.common);
+        const commonData = {};
+        commonFields.forEach(field => {
+            commonData[field.id] = document.getElementById(`common_${field.id}`).value;
+        });
+        items.forEach(item => { Object.assign(item, commonData); });
+        // Visually update item cards is better for UX, but re-render is simpler for now
+        render(); 
+    });
+
+    document.getElementById('add-item-btn').addEventListener('click', () => { items.push({}); render(); });
+    
+    itemsContainer.addEventListener('input', e => {
+        if (e.target.tagName === 'INPUT') {
+            const index = e.target.closest('.item-card').dataset.index;
+            const id = e.target.id.split('_')[0];
+            items[index][id] = e.target.value;
+        }
+    });
+
+    itemsContainer.addEventListener('click', e => {
+        if (e.target.classList.contains('remove-item-btn')) {
+            items.splice(e.target.closest('.item-card').dataset.index, 1);
+            if (items.length === 0) items.push({});
+            render();
+        }
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        const template = formTemplates[currentFormType];
+        const allFields = template.fields;
+        const FONT = "font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 10pt;";
+        const TD_L = `padding: 8px; font-weight: bold; text-align: center; background-color: #f2f2f2; ${FONT}`;
+        const TD_V = `padding: 8px; vertical-align: top; ${FONT}`;
+        
+        let header = `<tr><td style="${TD_L}">${template.title}</td>`;
+        for (let i=0; i<items.length; i++) header += `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i+1}</td>`;
+        header += `</tr>`;
+
+        let bodyRows = '';
+        allFields.forEach(field => {
+            let row = `<tr><td style="${TD_L}">${field.label}</td>`;
+            items.forEach(item => {
+                const commonValue = field.common ? document.getElementById(`common_${field.id}`).value : null;
+                const value = item[field.id] || commonValue || '<br>';
+                row += `<td style="${TD_V}">${value}</td>`;
+            });
+            row += '</tr>';
+            bodyRows += row;
+        });
+
+        const finalHtml = `<table border="1" style="border-collapse: collapse; width: 100%; ${FONT}"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
+        
+        try {
+            const blob = new Blob([finalHtml.trim()], { type: 'text/html' });
+            navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+            const fb = document.getElementById('copyFeedback');
+            fb.style.opacity = '1';
+            setTimeout(() => { fb.style.opacity = '0'; }, 2000);
+        } catch(e) { alert('복사 실패'); }
+    });
+
+    // Initial Load
+    loadExcelData();
+</script>
+</body>
+</html>
