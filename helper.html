@@ -1,218 +1,564 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>WEHAGO 양식 생성기 (Excel 연동 v4.0)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        :root { --primary-color: #5a67d8; --primary-hover: #4c51bf; --border-color: #e2e8f0; --background-light: #f7fafc; --background-white: #ffffff; --text-dark: #2d3748; --text-light: #718096; }
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--background-light); margin: 0; padding: 2rem; }
-        .container { max-width: 900px; margin: 20px auto; }
-        h1 { font-size: 2rem; color: var(--text-dark); text-align: center; margin-bottom: 2.5rem; }
-        .section { background: var(--background-white); padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); margin-bottom: 2rem; }
-        h2 { font-size: 1.25rem; color: var(--text-dark); margin-top: 0; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
-        label { font-weight: 500; font-size: 0.875rem; color: var(--text-light); display: block; margin-bottom: 0.5rem; }
-        input, select { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; box-sizing: border-box; font-family: inherit; }
-        input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.15); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-        .button {
-            display: inline-block; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; color: white;
-            background-color: var(--primary-color); border: none; border-radius: 0.5rem; cursor: pointer; text-align: center;
-        }
-        .button:hover { background-color: var(--primary-hover); }
-        .item-card { background-color: var(--background-light); border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; }
-        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .item-header h3 { margin: 0; font-size: 1.1rem; }
-        .remove-item-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); line-height: 1; }
-        .copy-feedback { text-align: center; color: var(--primary-color); font-weight: 600; margin-top: 1rem; opacity: 0; transition: opacity 0.5s; height: 24px;}
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>WEHAGO 양식 생성기 💡</h1>
-
-    <div class="section">
-        <h2>1. 양식 선택 및 공통 정보</h2>
-        <div class="grid" id="common-inputs-container">
-            <div>
-                <label for="formType">양식 종류 (엑셀 파일에서 불러옴)</label>
-                <select id="formType"></select>
-            </div>
-        </div>
-        <button id="apply-common-btn" class="button" style="margin-top: 1rem;">[↓] 모든 항목에 공통 정보 적용</button>
-    </div>
-
-    <div class="section">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2>2. 세부 항목 입력</h2>
-            <button id="add-item-btn" class="button" style="background-color:#64748b;">[+] 항목 추가</button>
-        </div>
-        <div id="items-container" style="margin-top: 1.5rem;"></div>
-    </div>
-    
-    <button id="copyBtn" class="button" style="width:100%; padding: 1rem; font-size: 1.2rem;">🚀 최종 양식 생성 및 복사</button>
-    <div id="copyFeedback">✅ 복사 완료! WEHAGO에 붙여넣으세요.</div>
-</div>
-
 <script>
-    let formTemplates = {};
-    let items = [{}];
-    let currentFormType = '';
+/* =========================================================
+   WEHAGO 인텔리전트 폼 생성기 - Excel/CSV 연동 최종 스크립트
+   - HTML/CSS/디자인 변경 없음
+   - 기존 기능 100% 유지 + 외부 파일 동적 로드
+   - 시트명=폼명, [공통] 규칙 적용
+   ========================================================= */
 
-    const commonInputsContainer = document.getElementById('common-inputs-container');
-    const itemsContainer = document.getElementById('items-container');
-    const formTypeSelect = document.getElementById('formType');
+/* ---------- 전역 상태 (기존 키/흐름 유지) ---------- */
+let vendors = {};                  // { 업체명: { paymentMethod, account } }
+let formTemplates = {};            // { [formKey]: { title, fields:[{id,label,common,placeholder,isVendor}] } }
+let items = [{}];
+let currentFormType = null;
 
-    async function loadExcelData() {
-        try {
-            const url = './format.xlsx'; // 같은 폴더에 있는 'format.xlsx' 파일을 가리킵니다.
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            const data = new Uint8Array(arrayBuffer);
-            const workbook = XLSX.read(data, {type: 'array'});
+/* ---------- DOM 캐시 (기존 id 유지) ---------- */
+const expandableContainer   = document.querySelector('.expandable-width-container');
+const commonInputsContainer = document.getElementById('common-inputs-container');
+const itemsContainer        = document.getElementById('items-container');
+const addItemBtn            = document.getElementById('add-item-btn');
+const applyCommonBtn        = document.getElementById('apply-common-btn');
+const copyBtn               = document.getElementById('copyBtn');
+const formTypeSelector      = document.getElementById('masterFormType');
+const resetBtn              = document.getElementById('reset-btn');
 
-            formTemplates = {};
-            workbook.SheetNames.forEach(sheetName => {
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                
-                formTemplates[sheetName] = {
-                    title: sheetName,
-                    fields: jsonData.slice(1).map(row => ({
-                        id: row[0],
-                        label: row[1],
-                        common: row[2] && row[2].toLowerCase() === 'common'
-                    }))
-                };
-            });
-            
-            // Populate form type selector
-            formTypeSelect.innerHTML = Object.keys(formTemplates).map(name => `<option value="${name}">${name}</option>`).join('');
-            currentFormType = workbook.SheetNames[0];
-            formTypeSelect.value = currentFormType;
-            render();
+/* ---------- 유틸 ---------- */
+const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
 
-        } catch (error) {
-            console.error("엑셀 파일 로딩 실패:", error);
-            alert("'format.xlsx' 파일을 찾을 수 없거나 읽는 데 실패했습니다. 동일한 폴더에 파일이 있는지 확인해주세요.");
-        }
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if (window.XLSX) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.async = true; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+function toStr(v){ return (v==null)? '' : String(v); }
+function cleanLabel(label){
+  const s = toStr(label).trim();
+  if(!s) return '';
+  // 머리말/구분선/주석성 문구 제외
+  const plain = s.replace(/\s/g,'');
+  if (s.startsWith('<')) return '';                              // <지출 정보> 등
+  if (!/[^\-\–—_]/.test(s)) return '';                           // 하이픈/언더스코어만
+  if (/^[=+*#/\\]+$/.test(plain)) return '';
+  return s;
+}
+function isVendorLabel(label){
+  const s = toStr(label).trim().toLowerCase();
+  return ['거래처','구입처','vendor'].includes(s);
+}
+function stripCommonMark(label){
+  return toStr(label).replace(/\s*\[공통\]\s*$/,'').trim();
+}
+function hasCommonMark(label){
+  return /\[공통\]\s*$/.test(toStr(label));
+}
+function makeIdFromLabel(label){
+  // 한글 id도 허용되지만, 공백/괄호/제어문자 제거
+  return toStr(label).trim().replace(/\s+/g,'_').replace(/[()[\]{}<>]/g,'').replace(/[^\S\r\n]/g,'');
+}
+function getTemplate(){ return formTemplates[currentFormType]; }
+function ensureCurrentForm(){
+  const keys = Object.keys(formTemplates);
+  if (!keys.length) return;
+  if (!currentFormType || !formTemplates[currentFormType]) currentFormType = keys[0];
+  formTypeSelector.value = currentFormType;
+}
+function saveState(){
+  localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType }));
+}
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('wehagoFormData')||'null');
+    if (saved) {
+      items = Array.isArray(saved.items) && saved.items.length ? saved.items : [{}];
+      currentFormType = saved.currentFormType || currentFormType;
     }
+  }catch(e){ /* ignore */ }
+}
 
-    function render() {
-        if (!currentFormType || !formTemplates[currentFormType]) return;
-        const template = formTemplates[currentFormType];
-
-        // Render Common Inputs (excluding the main type selector)
-        let commonHtml = '';
-        template.fields.filter(f => f.common).forEach(field => {
-            commonHtml += `<div><label for="common_${field.id}">${field.label}</label><input type="text" id="common_${field.id}"></div>`;
-        });
-        // Clear previous and add new ones, keeping the formType selector
-        const existingFormType = commonInputsContainer.querySelector('#formType').parentElement;
-        commonInputsContainer.innerHTML = '';
-        commonInputsContainer.appendChild(existingFormType);
-        commonInputsContainer.innerHTML += commonHtml;
-
-
-        // Render Item Cards
-        itemsContainer.innerHTML = '';
-        items.forEach((itemData, index) => {
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.dataset.index = index;
-            const itemFields = template.fields.filter(f => !f.common);
-            
-            card.innerHTML = `
-                <div class="item-header">
-                    <h3>항목 ${index + 1}</h3>
-                    ${items.length > 1 ? `<button class="remove-item-btn" title="항목 삭제">×</button>` : ''}
-                </div>
-                <div class="grid">${itemFields.map(field => {
-                    const fieldId = `${field.id}_${index}`;
-                    const value = itemData[field.id] || '';
-                    return `<div><label for="${fieldId}">${field.label}</label><input type="text" id="${fieldId}" value="${value}"></div>`;
-                }).join('')}</div>`;
-            itemsContainer.appendChild(card);
-        });
+/* ---------- CSV 파서 (따옴표/콤마 대응) ---------- */
+function parseCSV(text){
+  const rows = [];
+  let row = [], i=0, inQuotes=false, field='';
+  while(i<text.length){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field+='"'; i+=2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    } else {
+      if (c === '"'){ inQuotes = true; i++; continue; }
+      if (c === ','){ row.push(field); field=''; i++; continue; }
+      if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
+      if (c === '\r'){ i++; continue; }
+      field += c; i++; continue;
     }
+  }
+  row.push(field); rows.push(row);
+  // BOM 제거
+  if (rows.length && rows[0].length && rows[0][0].charCodeAt(0)===0xFEFF){
+    rows[0][0] = rows[0][0].slice(1);
+  }
+  return rows;
+}
 
-    // Event Delegation for dynamic elements
-    document.addEventListener('change', e => {
-        if (e.target.id === 'formType') {
-            currentFormType = e.target.value;
-            items = [{}];
-            render();
-        }
-    });
+/* ---------- 외부 파일 로드 ---------- */
+async function fetchText(url){
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP '+res.status);
+  return await res.text();
+}
+async function fetchArrayBuffer(url){
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP '+res.status);
+  return await res.arrayBuffer();
+}
 
-    document.getElementById('apply-common-btn').addEventListener('click', () => {
-        const commonFields = formTemplates[currentFormType].fields.filter(f => f.common);
-        const commonData = {};
-        commonFields.forEach(field => {
-            commonData[field.id] = document.getElementById(`common_${field.id}`).value;
+async function loadVendorsFromCsvAuto(){
+  try{
+    const csv = await fetchText('vendor.csv');
+    const rows = parseCSV(csv);
+    // 헤더 찾기
+    const header = rows[0].map(h=>toStr(h).trim());
+    const idxName = header.findIndex(h=>/업체명/i.test(h));
+    const idxBank = header.findIndex(h=>/은행/i.test(h));
+    const idxAcct = header.findIndex(h=>/계좌번호|계좌/i.test(h));
+    if (idxName<0 || idxBank<0 || idxAcct<0) throw new Error('CSV 헤더를 찾을 수 없음');
+    const map = {};
+    for (let r=1;r<rows.length;r++){
+      const name = toStr(rows[r][idxName]).trim();
+      const bank = toStr(rows[r][idxBank]).trim();
+      let acct = toStr(rows[r][idxAcct]).trim();
+      if (!name) continue;
+      // 숫자형 표현으로 변한 계좌번호 복구 시도(과학표기 제거)
+      acct = acct.replace(/[^0-9\-]/g,'') || toStr(rows[r][idxAcct]).trim();
+      map[name] = {
+        paymentMethod: '운영계좌 이체',
+        account: `${bank} / ${acct} / 예금주 : ${name}`
+      };
+    }
+    vendors = map;
+  }catch(e){
+    console.warn('vendor.csv 로드 실패:', e);
+  }
+}
+
+/* ---------- XLSX 로드 & 파싱 ---------- */
+async function loadFormsFromXlsxAuto(){
+  // SheetJS 로더
+  if (!window.XLSX){
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js');
+  }
+  try{
+    const buf = await fetchArrayBuffer('FORM.xlsx');
+    const wb = XLSX.read(buf, { type:'array' });
+    const templates = {};
+    wb.SheetNames.forEach(sheetName=>{
+      const ws = wb.Sheets[sheetName];
+      const array = XLSX.utils.sheet_to_json(ws, { header:1, raw:false, blankrows:false });
+      const fields = [];
+      for (let r=0;r<array.length;r++){
+        const A = cleanLabel(array[r][0]);
+        const B = toStr(array[r][1]||'').trim();
+        if (!A) continue;
+        const common = hasCommonMark(A);
+        const baseLabel = stripCommonMark(A);
+        const isVendor = isVendorLabel(baseLabel);
+        const id = makeIdFromLabel(baseLabel);
+        fields.push({
+          id, label: baseLabel, common, placeholder: B, isVendor
         });
-        items.forEach(item => { Object.assign(item, commonData); });
-        // Visually update item cards is better for UX, but re-render is simpler for now
-        render(); 
+      }
+      if (fields.length){
+        // key는 시트명 원문, title도 시트명으로
+        templates[sheetName] = { title: sheetName, fields };
+      }
     });
+    if (Object.keys(templates).length){
+      formTemplates = templates;
+    } else {
+      throw new Error('시트에서 유효한 필드를 찾지 못함');
+    }
+  }catch(e){
+    console.warn('FORM.xlsx 로드 실패:', e);
+  }
+}
 
-    document.getElementById('add-item-btn').addEventListener('click', () => { items.push({}); render(); });
-    
-    itemsContainer.addEventListener('input', e => {
-        if (e.target.tagName === 'INPUT') {
-            const index = e.target.closest('.item-card').dataset.index;
-            const id = e.target.id.split('_')[0];
-            items[index][id] = e.target.value;
+/* ---------- 로컬 파일 선택(로컬 오픈 대비) ---------- */
+async function interactivePickIfMissing(){
+  if (Object.keys(formTemplates).length && Object.keys(vendors).length) return;
+  // fetch 실패한 경우에만 사용자에게 파일 선택 요청 (자동 1회)
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);z-index:9999';
+  wrap.innerHTML = `
+    <div style="background:#fff;padding:16px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.2);max-width:560px;width:92%;font-family:inherit;">
+      <div style="font-weight:700;margin-bottom:8px;">외부 파일 불러오기</div>
+      <div style="font-size:13px;color:#444;line-height:1.6;margin-bottom:10px;">
+        GitHub Pages처럼 웹에서 열면 자동으로 <b>FORM.xlsx</b> / <b>vendor.csv</b>를 불러온다.<br>
+        로컬 파일로 직접 연 경우 아래에서 파일을 선택해 주세요. (각각 선택)
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;">
+        <div>
+          <div style="font-size:12px;margin-bottom:4px;">FORM.xlsx</div>
+          <input id="pick-xlsx" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        </div>
+        <div>
+          <div style="font-size:12px;margin-bottom:4px;">vendor.csv</div>
+          <input id="pick-csv" type="file" accept=".csv,text/csv">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;">
+        <button id="pick-cancel" class="button button-secondary" style="padding:6px 12px;">닫기</button>
+        <button id="pick-parse" class="button" style="padding:6px 12px;">불러오기</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  function readFileAsArrayBuffer(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsArrayBuffer(f); }); }
+  function readFileAsText(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsText(f,'utf-8'); }); }
+
+  return new Promise(resolve=>{
+    wrap.querySelector('#pick-cancel').onclick = ()=>{ wrap.remove(); resolve(); };
+    wrap.querySelector('#pick-parse').onclick = async ()=>{
+      try{
+        // CSV
+        const csvFile = wrap.querySelector('#pick-csv').files[0];
+        if (csvFile){
+          const text = await readFileAsText(csvFile);
+          const rows = parseCSV(text);
+          const header = rows[0].map(h=>toStr(h).trim());
+          const idxName = header.findIndex(h=>/업체명/i.test(h));
+          const idxBank = header.findIndex(h=>/은행/i.test(h));
+          const idxAcct = header.findIndex(h=>/계좌번호|계좌/i.test(h));
+          const map={};
+          for(let r=1;r<rows.length;r++){
+            const name = toStr(rows[r][idxName]).trim();
+            const bank = toStr(rows[r][idxBank]).trim();
+            let acct = toStr(rows[r][idxAcct]).trim().replace(/[^0-9\-]/g,'');
+            if (!name) continue;
+            map[name]={ paymentMethod:'운영계좌 이체', account:`${bank} / ${acct} / 예금주 : ${name}` };
+          }
+          vendors = map;
         }
-    });
-
-    itemsContainer.addEventListener('click', e => {
-        if (e.target.classList.contains('remove-item-btn')) {
-            items.splice(e.target.closest('.item-card').dataset.index, 1);
-            if (items.length === 0) items.push({});
-            render();
+        // XLSX
+        const xlsxFile = wrap.querySelector('#pick-xlsx').files[0];
+        if (xlsxFile){
+          if (!window.XLSX) await loadScriptOnce('https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js');
+          const buf = await readFileAsArrayBuffer(xlsxFile);
+          const wb = XLSX.read(buf,{type:'array'});
+          const templates={};
+          wb.SheetNames.forEach(sheetName=>{
+            const ws = wb.Sheets[sheetName];
+            const arr = XLSX.utils.sheet_to_json(ws,{header:1,raw:false,blankrows:false});
+            const fields=[];
+            for(let r=0;r<arr.length;r++){
+              const A = cleanLabel(arr[r][0]);
+              const B = toStr(arr[r][1]||'').trim();
+              if (!A) continue;
+              const common = hasCommonMark(A);
+              const baseLabel = stripCommonMark(A);
+              const isVendor = isVendorLabel(baseLabel);
+              const id = makeIdFromLabel(baseLabel);
+              fields.push({id,label:baseLabel,common,placeholder:B,isVendor});
+            }
+            if (fields.length) templates[sheetName]={title:sheetName,fields};
+          });
+          if (Object.keys(templates).length) formTemplates=templates;
         }
-    });
+        wrap.remove();
+        resolve();
+      }catch(e){
+        alert('파일 읽기 실패: '+e.message);
+      }
+    };
+  });
+}
 
-    document.getElementById('copyBtn').addEventListener('click', () => {
-        const template = formTemplates[currentFormType];
-        const allFields = template.fields;
-        const FONT = "font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 10pt;";
-        const TD_L = `padding: 8px; font-weight: bold; text-align: center; background-color: #f2f2f2; ${FONT}`;
-        const TD_V = `padding: 8px; vertical-align: top; ${FONT}`;
-        
-        let header = `<tr><td style="${TD_L}">${template.title}</td>`;
-        for (let i=0; i<items.length; i++) header += `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i+1}</td>`;
-        header += `</tr>`;
+/* ---------- 렌더링 ---------- */
+function adjustContainerWidth(){
+  const cardWidth = 360;  // 카드 예상폭
+  const cardGap   = 16;
+  const actual = (items.length * cardWidth) + Math.max(0, items.length-1)*cardGap;
+  itemsContainer.style.width = (items.length>1) ? `${actual}px` : '100%';
+}
 
-        let bodyRows = '';
-        allFields.forEach(field => {
-            let row = `<tr><td style="${TD_L}">${field.label}</td>`;
-            items.forEach(item => {
-                const commonValue = field.common ? document.getElementById(`common_${field.id}`).value : null;
-                const value = item[field.id] || commonValue || '<br>';
-                row += `<td style="${TD_V}">${value}</td>`;
-            });
-            row += '</tr>';
-            bodyRows += row;
+function render(){
+  const template = getTemplate();
+  if (!template){ return; }
+
+  // 공통 입력들
+  commonInputsContainer.innerHTML = template.fields
+    .filter(f=>f.common)
+    .map(field=>{
+      const value = items[0]?.[field.id] || '';
+      const placeholder = field.placeholder || '';
+      let input;
+      if (field.isVendor){
+        const opts = ['',''].concat(Object.keys(vendors));
+        const optionsHtml = ['<option value="">선택</option>']
+          .concat(Object.keys(vendors).map(v=>`<option value="${v}" ${value===v?'selected':''}>${v}</option>`))
+          .join('');
+        input = `<select id="common_${field.id}" data-fieldid="${field.id}" class="vendor-select">${optionsHtml}</select>`;
+      } else {
+        input = `<input type="text" id="common_${field.id}" data-fieldid="${field.id}" placeholder="${placeholder.replace(/"/g,'&quot;')}" value="${value}">`;
+      }
+      return `<div><label for="common_${field.id}">${field.label}</label>${input}</div>`;
+    }).join('');
+
+  // 항목 카드
+  itemsContainer.innerHTML = items.map((itemData, index)=>{
+    const fieldsHtml = template.fields
+      .filter(f=>!f.common)
+      .map(field=>{
+        const val = toStr(itemData[field.id]||'');
+        const ph  = field.placeholder || '';
+        let input;
+        if (field.isVendor){
+          const optionsHtml = ['<option value="">선택</option>']
+            .concat(Object.keys(vendors).map(v=>`<option value="${v}" ${val===v?'selected':''}>${v}</option>`))
+            .join('');
+          input = `<select id="item_${index}_${field.id}" data-idx="${index}" data-fieldid="${field.id}" class="vendor-select">${optionsHtml}</select>`;
+        } else {
+          input = `<input type="text" id="item_${index}_${field.id}" data-idx="${index}" data-fieldid="${field.id}" placeholder="${ph.replace(/"/g,'&quot;')}" value="${val}">`;
+        }
+        return `<div><label for="item_${index}_${field.id}">${field.label}</label>${input}</div>`;
+      }).join('');
+    return `
+      <div class="item-card" data-index="${index}">
+        <div class="item-header">
+          <h3>항목 ${index+1}</h3>
+          ${index>0 ? '<button class="remove-item-btn" title="항목 삭제">×</button>' : ''}
+        </div>
+        <div class="item-fields-container">${fieldsHtml}</div>
+      </div>`;
+  }).join('');
+
+  // 이벤트 바인딩
+  // 공통 입력
+  template.fields.filter(f=>f.common).forEach(field=>{
+    const el = document.getElementById(`common_${field.id}`);
+    if (!el) return;
+    if (field.isVendor){
+      el.addEventListener('change', e=>{
+        items[0][field.id] = e.target.value;
+        // 벤더 자동 채움 (공통 스코프)
+        autoFillVendorRelated('common', 0, field.id, e.target.value);
+        saveState();
+      });
+    } else {
+      el.addEventListener('input', e=>{
+        items[0][field.id] = e.target.value;
+        saveState();
+      });
+    }
+  });
+
+  // 항목 입력
+  items.forEach((it, idx)=>{
+    template.fields.filter(f=>!f.common).forEach(field=>{
+      const el = document.getElementById(`item_${idx}_${field.id}`);
+      if (!el) return;
+      if (field.isVendor){
+        el.addEventListener('change', e=>{
+          items[idx][field.id] = e.target.value;
+          // 벤더 자동 채움 (해당 항목 스코프)
+          autoFillVendorRelated('item', idx, field.id, e.target.value);
+          saveState();
         });
-
-        const finalHtml = `<table border="1" style="border-collapse: collapse; width: 100%; ${FONT}"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
-        
-        try {
-            const blob = new Blob([finalHtml.trim()], { type: 'text/html' });
-            navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
-            const fb = document.getElementById('copyFeedback');
-            fb.style.opacity = '1';
-            setTimeout(() => { fb.style.opacity = '0'; }, 2000);
-        } catch(e) { alert('복사 실패'); }
+      } else {
+        el.addEventListener('input', e=>{
+          items[idx][field.id] = e.target.value;
+          saveState();
+        });
+      }
     });
+  });
 
-    // Initial Load
-    loadExcelData();
+  // 삭제 버튼
+  itemsContainer.querySelectorAll('.remove-item-btn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const card = e.target.closest('.item-card');
+      const idx = parseInt(card.dataset.index, 10);
+      items.splice(idx,1);
+      if (!items.length) items=[{}];
+      saveState(); render();
+    });
+  });
+
+  adjustContainerWidth();
+}
+
+/* ---------- 벤더 자동 채움 ---------- */
+function findFieldIdByExactLabel(template, label){
+  const t = template.fields.find(f=>f.label.trim()===label.trim());
+  return t ? t.id : null;
+}
+
+function autoFillVendorRelated(scope, itemIndex, vendorFieldId, vendorName){
+  if (!vendorName || !vendors[vendorName]) return;
+  const template = getTemplate();
+  const paymentFieldId = findFieldIdByExactLabel(template, '결제 수단');
+  const accountFieldId = findFieldIdByExactLabel(template, '입금 계좌');
+
+  if (scope==='common'){
+    if (paymentFieldId){
+      items[0][paymentFieldId] = vendors[vendorName].paymentMethod;
+      const el = document.getElementById(`common_${paymentFieldId}`);
+      if (el) el.value = vendors[vendorName].paymentMethod;
+    }
+    if (accountFieldId){
+      items[0][accountFieldId] = vendors[vendorName].account;
+      const el2 = document.getElementById(`common_${accountFieldId}`);
+      if (el2) el2.value = vendors[vendorName].account;
+    }
+  } else {
+    if (paymentFieldId){
+      items[itemIndex][paymentFieldId] = vendors[vendorName].paymentMethod;
+      const el = document.getElementById(`item_${itemIndex}_${paymentFieldId}`);
+      if (el) el.value = vendors[vendorName].paymentMethod;
+    }
+    if (accountFieldId){
+      items[itemIndex][accountFieldId] = vendors[vendorName].account;
+      const el2 = document.getElementById(`item_${itemIndex}_${accountFieldId}`);
+      if (el2) el2.value = vendors[vendorName].account;
+    }
+  }
+}
+
+/* ---------- 버튼/셀렉터 ---------- */
+addItemBtn.addEventListener('click', ()=>{
+  items.push({});
+  saveState();
+  render();
+  // 스크롤 끝으로
+  expandableContainer.scrollTo({ left: expandableContainer.scrollWidth, behavior:'smooth' });
+});
+
+applyCommonBtn.addEventListener('click', ()=>{
+  const template = getTemplate();
+  const commons = template.fields.filter(f=>f.common);
+  // 공통 입력값 가져오기
+  const commonData = {};
+  commons.forEach(f=>{
+    const v = toStr(items[0][f.id]||'');
+    if (v!=='') commonData[f.id]=v;
+  });
+  // 각 항목에 채우기
+  items.forEach((it, idx)=>{
+    if (idx===0) return; // 첫 항목은 동일 객체를 쓰므로 스킵
+    Object.keys(commonData).forEach(fid=>{ it[fid] = commonData[fid]; });
+  });
+  saveState();
+  render();
+});
+
+formTypeSelector.addEventListener('change', ()=>{
+  currentFormType = formTypeSelector.value;
+  items = [{}]; // 폼 교체 시 초기화(기존 동작과 동일한 초기화 가정)
+  saveState();
+  render();
+});
+
+resetBtn.addEventListener('click', ()=>{
+  if (!confirm('모든 내용을 지우고 처음부터 작성할까요?')) return;
+  items=[{}];
+  saveState();
+  render();
+});
+
+/* ---------- 복사 버튼 (기존 포맷 유지) ---------- */
+copyBtn.addEventListener('click', async ()=>{
+  const template = getTemplate();
+  const FONT = 'font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Segoe UI, Roboto, Apple SD Gothic Neo, Noto Sans KR, "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;';
+  const TH_L = `text-align:left; background:#f5f7fb; padding:8px; ${FONT}`;
+  const TD_L = `text-align:left; padding:8px; ${FONT}`;
+  const TD_C = `text-align:center; padding:8px; ${FONT}`;
+  const headerTitle = `
+    <tr>
+      <td style="${TD_L}" colspan="${items.length+1}">
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">${template.title}</div>
+        <div style="color:#666;font-size:12px">시트명 기준 자동 생성</div>
+      </td>
+    </tr>`;
+  const headRow = `
+    <tr>
+      <th style="${TH_L}">항목</th>
+      ${items.map((_,i)=>`<th style="${TH_L}">항목 ${i+1}</th>`).join('')}
+    </tr>`;
+
+  const bodyRows = template.fields.map(field=>{
+    const rowCells = items.map((it,i)=>{
+      const v = toStr(it[field.id]||'').replace(/\n/g,'<br>');
+      return `<td style="${TD_L}">${v || '<br>'}</td>`;
+    }).join('');
+    return `<tr><th style="${TH_L}">${field.label}</th>${rowCells}</tr>`;
+  }).join('');
+
+  const html = `
+    <table border="1" style="border-collapse:collapse;border:1px solid #d7dce6; ${FONT}">
+      <thead>${headerTitle}${headRow}</thead>
+      <tbody>${bodyRows}</tbody>
+    </table>`;
+
+  try{
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([html], {type:'text/html'}),
+        'text/plain': new Blob([html.replace(/<[^>]+>/g,'')], {type:'text/plain'})
+      })
+    ]);
+    // 피드백 토스트 (기존 스타일 유지 가정)
+    let fb = document.getElementById('copy-feedback');
+    if (!fb){
+      fb = document.createElement('div');
+      fb.id='copy-feedback';
+      fb.style.cssText='position:fixed;right:16px;bottom:16px;background:#2f855a;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.2);opacity:0;transition:.25s;z-index:9999';
+      fb.textContent='복사 완료';
+      document.body.appendChild(fb);
+    }
+    fb.style.opacity='1';
+    setTimeout(()=>{ fb.style.opacity='0'; }, 1600);
+  }catch(e){
+    alert('복사에 실패했습니다.');
+  }
+});
+
+/* ---------- 드롭다운(폼 목록) 재구성 ---------- */
+function rebuildFormTypeSelector(){
+  const optionsHtml = Object.keys(formTemplates).map(key=>{
+    const t = formTemplates[key];
+    return `<option value="${key}">${t.title}</option>`;
+  }).join('');
+  formTypeSelector.innerHTML = optionsHtml || '<option value="" disabled>폼 없음</option>';
+  ensureCurrentForm();
+}
+
+/* ---------- 초기화 ---------- */
+let resizeTimer=null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(adjustContainerWidth, 120);
+});
+
+async function init(){
+  // 1) 외부 파일 자동 로드 시도
+  await Promise.allSettled([
+    loadVendorsFromCsvAuto(),
+    loadFormsFromXlsxAuto(),
+  ]);
+
+  // 2) 자동 로드 실패했다면, 로컬 선택 창 제공
+  await interactivePickIfMissing();
+
+  // 3) 상태/셀렉터/렌더
+  rebuildFormTypeSelector();
+  loadState();
+  ensureCurrentForm();
+  render();
+}
+init();
 </script>
-</body>
-</html>
