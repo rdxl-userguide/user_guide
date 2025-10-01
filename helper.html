@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (Beta)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (v2.4 - 복사 기능 개선)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -71,15 +71,6 @@
         .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0 0 0 0.5rem; line-height: 1; opacity: 0.3; transition: opacity 0.2s; }
         .icon-btn:hover { opacity: 1; }
         .hide-btn { font-size: 1.2rem; font-weight: bold; }
-        .request-link {
-            display: block;
-            text-align: right;
-            font-size: 0.85rem;
-            margin-top: 0.5rem;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-        .request-link:hover { text-decoration: underline; }
 
         /* --- 숨김/복원 기능 --- */
         .restore-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); }
@@ -105,22 +96,18 @@
         .header-controls { display:flex; justify-content:space-between; align-items:center; }
 
         /* --- [수정] 피드백 및 버전 정보 --- */
-        .feedback-notice {
+        .footer-notice {
             text-align: center;
             margin-top: 3rem;
             padding-top: 2rem;
             border-top: 1px solid var(--border-color);
             color: var(--text-light);
             font-size: 0.9rem;
-            line-height: 1.6;
+            line-height: 1.7;
         }
-        .feedback-notice a {
-            color: var(--primary-color);
-            font-weight: 500;
-            text-decoration: none;
-        }
-        .feedback-notice a:hover {
-            text-decoration: underline;
+        .footer-notice b {
+            color: var(--text-dark);
+            font-weight: 600;
         }
     </style>
 </head>
@@ -178,14 +165,14 @@
     </div>
 </div>
 
-<div class="feedback-notice">
+<div class="footer-notice">
     <p>
-        본 폼 생성기는 현재 베타 테스트(v2.2) 중입니다. <br>
+        본 폼 생성기는 현재 베타 테스트 중입니다. (v2.4)<br>
         거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
-        <b>FOR RADEXEL INC. USE ONLY</b><br>
-
+        <b>FOR RADEXEL INC. USE ONLY</b>
     </p>
 </div>
+
 
 <script>
     const vendors = {
@@ -315,9 +302,9 @@
 
         commonInputsContainer.innerHTML = visibleCommonFields.map(field => {
             const isPinned = pinnedFields.includes(field.id);
-            const pinButton = isPinned ? `<button class="icon-btn pin-btn" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
+            const pinButton = isPinned ? `<button class="icon-btn pin-btn" tabindex="-1" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
             const value = commonData[field.id] || '';
-            let inputHtml = `<div><div class="label-wrapper"><label for="common_${field.id}">${field.label}</label><div class="label-icons">${pinButton}<button class="icon-btn hide-btn" data-field-id="${field.id}" title="항목 숨기기">×</button></div></div>`;
+            let inputHtml = `<div><div class="label-wrapper"><label for="common_${field.id}">${field.label}</label><div class="label-icons">${pinButton}<button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button></div></div>`;
 
             if (field.id === 'vendor') {
                 const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
@@ -333,14 +320,14 @@
         itemsContainer.innerHTML = items.map((itemData, index) => {
             return `
                 <div class="item-card" data-index="${index}">
-                    <div class="item-header"><h3>항목 ${index + 1}</h3>${items.length > 1 ? '<button class="remove-item-btn" title="항목 삭제">×</button>' : ''}</div>
+                    <div class="item-header"><h3>항목 ${index + 1}</h3>${items.length > 1 ? '<button class="remove-item-btn" tabindex="-1" title="항목 삭제">×</button>' : ''}</div>
                     <div class="item-fields-container">${visibleItemFields.map(field => `
                         <div>
                             <div class="label-wrapper">
                                 <label for="${field.id}_${index}">${field.label}</label>
                                 <div class="label-icons">
-                                    <button class="icon-btn pin-btn" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
-                                    <button class="icon-btn hide-btn" data-field-id="${field.id}" title="항목 숨기기">×</button>
+                                    <button class="icon-btn pin-btn" tabindex="-1" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
+                                    <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>
                                 </div>
                             </div>
                             <input type="text" id="${field.id}_${index}" value="${itemData[field.id] || ''}" placeholder="${field.example || ''}">
@@ -504,13 +491,16 @@
              if (el) finalCommonData[fieldId] = el.value;
         });
 
-        const bodyRows = template.fields.map(field => {
+        // [수정] 숨겨진 항목을 제외하고 복사하도록 수정
+        const fieldsToCopy = template.fields.filter(field => !hiddenFields.includes(field.id));
+
+        const bodyRows = fieldsToCopy.map(field => {
             const isCommonField = commonFieldIds.includes(field.id);
             return `<tr><td style="${TD_L}">${field.label}</td>${items.map(item => {
                 const value = isCommonField ? (finalCommonData[field.id] || '') : (item[field.id] || '');
                 return `<td style="${TD_V}">${(value || '').replace(/\n/g, '<br>')}</td>`;
             }).join('')}</tr>`;
-        });
+        }).join('');
 
         const finalHtml = `<table border="1" style="border-collapse: collapse; width: 100%; ${FONT}"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
         try {
