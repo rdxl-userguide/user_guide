@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (v2.5 - UI 개선)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (v3.2 - 버그 수정)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -42,11 +42,12 @@
         h2 { font-size: 1.25rem; color: var(--text-dark); margin-top: 0; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
         .label-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
         label { font-weight: 500; font-size: 0.875rem; color: var(--text-light); }
-        .label-icons { display: flex; align-items: center; }
+        .label-icons { display: flex; align-items: center; gap: 0.25rem; }
         input, select { width: 100%; padding: 0.75rem; font-size: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem; box-sizing: border-box; font-family: inherit; transition: all 0.2s; }
         input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.15); }
         input::placeholder { color: #cbd5e0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        input:read-only, select:disabled { background-color: #f7fafc; color: #718096; cursor: not-allowed; }
+
 
         /* --- 안내 문구 스타일 --- */
         .app-description {
@@ -68,9 +69,10 @@
         .button:hover { background-color: var(--primary-hover); }
         .button-secondary { background-color: #edf2f7; color: var(--text-dark); }
         .button-secondary:hover { background-color: #e2e8f0; }
-        .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0 0 0 0.5rem; line-height: 1; opacity: 0.3; transition: opacity 0.2s; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1; opacity: 0.3; transition: opacity 0.2s; }
         .icon-btn:hover { opacity: 1; }
         .hide-btn { font-size: 1.2rem; font-weight: bold; }
+        .lock-icon { cursor: default; opacity: 0.5; }
 
         /* --- 숨김/복원 기능 --- */
         .restore-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); }
@@ -92,7 +94,7 @@
 
         /* --- UX 개선 --- */
         #copyFeedback { text-align: center; color: var(--primary-color); font-weight: 600; margin-top: 1rem; opacity: 0; transition: opacity 0.5s; height: 24px;}
-        .highlight { transition: box-shadow 0.1s; box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.4); }
+        .highlight { transition: box-shadow 0.2s; box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.4); }
         .header-controls { display:flex; justify-content:space-between; align-items:center; }
 
         /* --- 피드백 및 버전 정보 --- */
@@ -108,10 +110,6 @@
         .footer-notice b {
             color: var(--text-dark);
             font-weight: 600;
-        }
-        .footer-notice .mission-statement {
-            font-size: 0.85rem;
-            margin-bottom: 1.5rem;
         }
     </style>
 </head>
@@ -142,10 +140,12 @@
             <div class="header-controls">
                 <h2>1. 공통 정보 입력</h2>
             </div>
-            <p class="section-description">여기에 입력한 정보는 '모든 항목에 적용' 버튼으로 한 번에 반영할 수 있습니다.</p>
+            <p class="section-description">
+                여기에 입력한 정보는 모든 세부 항목에 실시간으로 반영됩니다. 🔓 아이콘을 눌러 개별 항목으로 변경할 수 있습니다.
+            </p>
             <div class="grid" id="common-inputs-container"></div>
             <div id="common-restore-section" class="restore-section" style="display: none;"></div>
-            <button id="apply-common-btn" class="button" style="margin-top: 1rem;">[↓] 모든 항목에 공통 정보 적용</button>
+            <button id="apply-common-btn" class="button" style="margin-top: 1rem;">[↓] 적용된 공통 항목 확인</button>
         </div>
     </div>
 
@@ -155,7 +155,9 @@
                 <h2>2. 세부 항목 입력</h2>
                 <button id="add-item-btn" class="button button-secondary">[+] 항목 추가</button>
             </div>
-             <p class="section-description">각 항목의 📌 아이콘으로 필드를 공통 정보로 옮기거나, × 아이콘으로 숨길 수 있습니다.</p>
+             <p class="section-description">
+                개별 항목을 입력하거나, 📌 아이콘으로 공통 항목으로 고정할 수 있습니다. 공통 항목(🔒)은 위에서 수정해야 합니다.
+             </p>
             <div id="items-container-wrapper">
                 <div id="items-container"></div>
             </div>
@@ -170,14 +172,8 @@
 </div>
 
 <div class="footer-notice">
-    <p class="mission-statement">
-        라덱셀은 임직원 여러분의 편의와 업무 효율성 향상을 위해 항상 노력하고 있습니다. <br>
-        더존 시스템이 가진 여러 장점에도 불구하고, 일부 기능의 아쉬움과 폐쇄적인 정책으로 인한 개선의 어려움이 있는 것이 현실입니다. <br>
-        본 도구는 이러한 환경 속에서 조금이나마 더 편하게 업무를 처리할 수 있도록 하는 여러 시도의 일환입니다. <br>
-        앞으로도 더 나은 업무 환경을 위해 다방면으로 고민하고 개선해 나가겠습니다.
-    </p>
     <p>
-        본 폼 생성기는 현재 베타 테스트 중입니다. (v2.5)<br>
+        본 폼 생성기는 현재 베타 테스트 중입니다. (v3.2)<br>
         거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
         <b>FOR RADEXEL INC. USE ONLY</b>
     </p>
@@ -185,38 +181,44 @@
 
 
 <script>
-    // --- (JavaScript 코드는 이전 버전과 동일하므로 생략) ---
-    // 아래 스크립트 내용은 이전 버전과 완전히 동일합니다.
+    // --- (v3.2) 수정된 JavaScript 코드 (버그 수정) ---
     const vendors = {
-        '특허법인 비엘티': { paymentMethod: '운영계좌 이체', account: '우리은행 / 1005303954125 / 예금주: 특허법인 비엘티' },
-        '(주)건우산업': { paymentMethod: '운영계좌이체', account: 'IBK기업은행 / 52304175001011 / 예금주: (주)건우산업' },
-        '(주)모터114': { paymentMethod: '운영계좌이체', account: 'IBK기업은행 / 13703900504018 / 예금주: (주)모터114' },
-        '(주)컴퓨존': { paymentMethod: '운영계좌이체', account: '우리은행 / 1005101312721 / 예금주: (주)컴퓨존' },
-        '(주)하나기획': { paymentMethod: '운영계좌이체', account: '하나은행 / 66791000864104 / 예금주: (주)하나기획' },
-        '(주)현대실리콘': { paymentMethod: '운영계좌이체', account: '국민은행 / 253250013096 / 예금주: (주)현대실리콘' },
-        '매니아서플라이': { paymentMethod: '운영계좌이체', account: '국민은행 / 92030101750467 / 예금주: 매니아서플라이' },
-        '메트로실리콘': { paymentMethod: '운영계좌이체', account: '국민은행 / 465701-04-054612 / 예금주: 메트로실리콘' },
-        '메트로테크': { paymentMethod: '운영계좌이체', account: 'IBK기업은행 / 41502297701016 / 예금주: 메트로테크' },
-        '반도NCT레이저': { paymentMethod: '운영계좌이체', account: 'IBK기업은행 / 20702171901013 / 예금주: 반도NCT레이저' },
-        '변호사 이우진 법률사무소': { paymentMethod: '운영계좌이체', account: '국민은행 / 46570104055862 / 예금주: 변호사 이우진 법률사무소' },
-        '브이이엔지': { paymentMethod: '운영계좌이체', account: '중소기업은행 / 48702598204038 / 예금주: 브이이엔지' },
-        '셀파스': { paymentMethod: '운영계좌이체', account: '국민은행 / 60240104074648 / 예금주: 셀파스' },
-        '아이서보': { paymentMethod: '운영계좌이체', account: 'IBK기업은행 / 18515007601016 / 예금주: 아이서보' },
-        '용산센트럴파크 단지 관리단': { paymentMethod: '운영계좌이체', account: '우리은행 / 1005804073595 / 예금주: 용산센트럴파크 단지 관리단' },
-        '인아오리엔탈모터(주)': { paymentMethod: '운영계좌이체', account: '신한은행 / 100030231529 / 예금주: 인아오리엔탈모터(주)' },
-        '주식회사 스탠다드랩': { paymentMethod: '운영계좌이체', account: '하나은행 / 47691002845704 / 예금주: 주식회사 스탠다드랩' },
-        '주식회사 코레이즈홀딩스': { paymentMethod: '운영계좌이체', account: 'KEB하나은행 / 37591003038404 / 예금주: 주식회사 코레이즈홀딩스' },
-        '청소대장부': { paymentMethod: '운영계좌이체', account: '기업은행 / 00196758104019 / 예금주: 청소대장부' },
-        '카본메이크': { paymentMethod: '운영계좌이체', account: '계좌정보 확인 필요 / 예금주: 카본메이크' },
-        '한국렌탈': { paymentMethod: '운영계좌이체', account: '산업은행 / 02203006736311 / 예금주: 한국렌탈' },
+        '특허법인 비엘티': { account: '우리은행 / 1005303954125 / 예금주: 특허법인 비엘티' },
+        '(주)건우산업': { account: 'IBK기업은행 / 52304175001011 / 예금주: (주)건우산업' },
+        '(주)모터114': { account: 'IBK기업은행 / 13703900504018 / 예금주: (주)모터114' },
+        '(주)컴퓨존': { account: '우리은행 / 1005101312721 / 예금주: (주)컴퓨존' },
+        '(주)하나기획': { account: '하나은행 / 66791000864104 / 예금주: (주)하나기획' },
+        '(주)현대실리콘': { account: '국민은행 / 253250013096 / 예금주: (주)현대실리콘' },
+        '매니아서플라이': { account: '국민은행 / 92030101750467 / 예금주: 매니아서플라이' },
+        '메트로실리콘': { account: '국민은행 / 465701-04-054612 / 예금주: 메트로실리콘' },
+        '메트로테크': { account: 'IBK기업은행 / 41502297701016 / 예금주: 메트로테크' },
+        '반도NCT레이저': { account: 'IBK기업은행 / 20702171901013 / 예금주: 반도NCT레이저' },
+        '변호사 이우진 법률사무소': { account: '국민은행 / 46570104055862 / 예금주: 변호사 이우진 법률사무소' },
+        '브이이엔지': { account: '중소기업은행 / 48702598204038 / 예금주: 브이이엔지' },
+        '셀파스': { account: '국민은행 / 60240104074648 / 예금주: 셀파스' },
+        '아이서보': { account: 'IBK기업은행 / 18515007601016 / 예금주: 아이서보' },
+        '용산센트럴파크 단지 관리단': { account: '우리은행 / 1005804073595 / 예금주: 용산센트럴파크 단지 관리단' },
+        '인아오리엔탈모터(주)': { account: '신한은행 / 100030231529 / 예금주: 인아오리엔탈모터(주)' },
+        '주식회사 스탠다드랩': { account: '하나은행 / 47691002845704 / 예금주: 주식회사 스탠다드랩' },
+        '주식회사 코레이즈홀딩스': { account: 'KEB하나은행 / 37591003038404 / 예금주: 주식회사 코레이즈홀딩스' },
+        '청소대장부': { account: '기업은행 / 00196758104019 / 예금주: 청소대장부' },
+        '카본메이크': { account: '계좌정보 확인 필요 / 예금주: 카본메이크' },
+        '한국렌탈': { account: '산업은행 / 02203006736311 / 예금주: 한국렌탈' },
     };
+
+    const paymentMethodOptions = [
+        '운영계좌 이체', '연구계좌 이체', '개인법인카드',
+        'SW카드', '다과카드', '사무잡비카드'
+    ];
 
     const BASE_COMMON_FIELDS = [
         { id: 'vendor', label: '거래처/구입처/용역업체', example: '네이버페이, 지오비전 등' },
-        { id: 'paymentMethod', label: '결제수단', example: '운영계좌이체, 개인법인카드 등' },
+        { id: 'paymentMethod', label: '결제수단', type: 'select', options: paymentMethodOptions },
         { id: 'account', label: '입금계좌', example: '국민은행 / 465701-04-054612 / 예금주 : OOO' },
         { id: 'purpose', label: '지출/구매/용역 목적 및 필요성', example: '구매를 요청하는 이유 · 필요성' },
     ];
+
+    const DEFAULT_PINNED_IDS = BASE_COMMON_FIELDS.map(f => f.id);
 
     const FIELD = {
         itemName: { id: 'itemName', label: '품목명/지출명', example: '업무용 모니터, 시뮬레이션용 서버' },
@@ -269,8 +271,8 @@
 
     let items = [{}];
     let currentFormType = 'general_expense';
-    let pinnedFields = [];
     let hiddenFields = [];
+    let pinnedFields = [...DEFAULT_PINNED_IDS];
     let commonData = {};
 
     const expandableContainer = document.querySelector('.expandable-width-container');
@@ -283,7 +285,7 @@
     const resetBtn = document.getElementById('reset-btn');
 
     const saveState = () => {
-        localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType, pinnedFields, hiddenFields, commonData }));
+        localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType, hiddenFields, pinnedFields, commonData }));
     };
 
     const loadState = () => {
@@ -293,8 +295,8 @@
                 const data = JSON.parse(savedState);
                 items = data.items && data.items.length > 0 ? data.items : [{}];
                 currentFormType = data.currentFormType || 'general_expense';
-                pinnedFields = data.pinnedFields || [];
                 hiddenFields = data.hiddenFields || [];
+                pinnedFields = data.pinnedFields || [...DEFAULT_PINNED_IDS];
                 commonData = data.commonData || {};
                 formTypeSelector.value = currentFormType;
             }
@@ -309,7 +311,7 @@
         const cardWidth = 320;
         const cardGap = 1.5 * 16;
         const defaultWidth = 900;
-        let requiredContainerWidth = (items.length <= 1) ? defaultWidth : ((items.length + 1) * cardWidth) + (items.length * cardGap) + sectionPadding;
+        let requiredContainerWidth = (items.length <= 1) ? defaultWidth : ((items.length * (cardWidth + cardGap)) - cardGap) + sectionPadding;
         const finalContainerWidth = Math.min(requiredContainerWidth, maxAllowedWidth);
         expandableContainer.style.maxWidth = `${Math.max(finalContainerWidth, defaultWidth)}px`;
         const actualContentWidth = (items.length * cardWidth) + (Math.max(0, items.length - 1) * cardGap);
@@ -318,55 +320,80 @@
 
     function render() {
         const template = formTemplates[currentFormType];
-        const baseCommonIds = BASE_COMMON_FIELDS.map(f => f.id);
+        const allFields = template.fields;
 
-        const allCommonFields = template.fields.filter(f => baseCommonIds.includes(f.id) || pinnedFields.includes(f.id));
-        const allItemFields = template.fields.filter(f => !baseCommonIds.includes(f.id) && !pinnedFields.includes(f.id));
-
-        const visibleCommonFields = allCommonFields.filter(f => !hiddenFields.includes(f.id));
-        const visibleItemFields = allItemFields.filter(f => !hiddenFields.includes(f.id));
-
-        const hiddenCommonFields = allCommonFields.filter(f => hiddenFields.includes(f.id));
-        const hiddenItemFields = allItemFields.filter(f => hiddenFields.includes(f.id));
-
-        commonInputsContainer.innerHTML = visibleCommonFields.map(field => {
-            const isPinned = pinnedFields.includes(field.id);
-            const pinButton = isPinned ? `<button class="icon-btn pin-btn" tabindex="-1" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
+        // --- 1. Render Common Info Section (Pinned Fields) ---
+        const visiblePinnedFields = allFields.filter(f => pinnedFields.includes(f.id) && !hiddenFields.includes(f.id));
+        commonInputsContainer.innerHTML = visiblePinnedFields.map(field => {
             const value = commonData[field.id] || '';
-            let inputHtml = `<div><div class="label-wrapper"><label for="common_${field.id}">${field.label}</label><div class="label-icons">${pinButton}<button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button></div></div>`;
+            let inputHtml = `<div>
+                <div class="label-wrapper">
+                    <label for="common_${field.id}">${field.label}</label>
+                    <div class="label-icons">
+                        <button class="icon-btn pin-btn" data-pin-action="unpin" data-field-id="${field.id}" title="개별 항목으로 변경">🔓</button>
+                        <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>
+                    </div>
+                </div>`;
 
             if (field.id === 'vendor') {
                 const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
                 inputHtml += `<select id="common_${field.id}"><option value="">-- 직접 입력 --</option>${optionsHtml}</select>`;
+            } else if (field.type === 'select') {
+                const optionsHtml = field.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('');
+                inputHtml += `<select id="common_${field.id}"><option value="">-- 선택 --</option>${optionsHtml}</select>`;
             } else {
                 inputHtml += `<input type="text" id="common_${field.id}" value="${value}" placeholder="${field.example || ''}">`;
             }
             return inputHtml + `</div>`;
         }).join('');
 
-        renderRestoreSection('common-restore-section', hiddenCommonFields);
-
+        // --- 2. Render Item Section (All visible fields) ---
+        const allVisibleFields = allFields.filter(f => !hiddenFields.includes(f.id));
         itemsContainer.innerHTML = items.map((itemData, index) => {
+            const itemFieldsHtml = allVisibleFields.map(field => {
+                const isPinned = pinnedFields.includes(field.id);
+                const value = isPinned ? (commonData[field.id] || '') : (itemData[field.id] || '');
+                const uniqueId = `${field.id}_${index}`;
+
+                let iconsHtml = '';
+                if (isPinned) {
+                    iconsHtml = `<button class="icon-btn lock-icon" title="공통 항목입니다. 위에서 수정하세요.">🔒</button>`;
+                } else {
+                    iconsHtml = `
+                        <button class="icon-btn pin-btn" data-pin-action="pin" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
+                        <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>`;
+                }
+
+                let fieldHtml = `<div>
+                    <div class="label-wrapper">
+                        <label for="${uniqueId}">${field.label}</label>
+                        <div class="label-icons">${iconsHtml}</div>
+                    </div>`;
+
+                if (field.type === 'select') {
+                    const optionsHtml = field.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('');
+                    fieldHtml += `<select id="${uniqueId}" ${isPinned ? 'disabled' : ''}><option value="">-- 선택 --</option>${optionsHtml}</select>`;
+                } else {
+                     fieldHtml += `<input type="text" id="${uniqueId}" value="${value}" placeholder="${field.example || ''}" ${isPinned ? 'readonly' : ''}>`;
+                }
+                return fieldHtml + `</div>`;
+            }).join('');
+
             return `
                 <div class="item-card" data-index="${index}">
                     <div class="item-header"><h3>항목 ${index + 1}</h3>${items.length > 1 ? '<button class="remove-item-btn" tabindex="-1" title="항목 삭제">×</button>' : ''}</div>
-                    <div class="item-fields-container">${visibleItemFields.map(field => `
-                        <div>
-                            <div class="label-wrapper">
-                                <label for="${field.id}_${index}">${field.label}</label>
-                                <div class="label-icons">
-                                    <button class="icon-btn pin-btn" tabindex="-1" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
-                                    <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>
-                                </div>
-                            </div>
-                            <input type="text" id="${field.id}_${index}" value="${itemData[field.id] || ''}" placeholder="${field.example || ''}">
-                        </div>`
-                    ).join('')}</div>
+                    <div class="item-fields-container">${itemFieldsHtml}</div>
                 </div>`;
         }).join('');
 
-        renderRestoreSection('item-restore-section', hiddenItemFields);
+        // --- 3. Render Restore Sections ---
+        const hiddenCommonFields = allFields.filter(f => hiddenFields.includes(f.id) && pinnedFields.includes(f.id));
+        const hiddenItemOnlyFields = allFields.filter(f => hiddenFields.includes(f.id) && !pinnedFields.includes(f.id));
 
+        renderRestoreSection('common-restore-section', hiddenCommonFields);
+        renderRestoreSection('item-restore-section', hiddenItemOnlyFields);
+
+        // --- 4. Final Adjustments ---
         if (items.length === 1) itemsContainer.querySelector('.item-card')?.classList.add('single-item');
         adjustContainerWidth();
         saveState();
@@ -385,19 +412,34 @@
         }
     }
 
-    function handleIconClick(e) {
-        const btn = e.target.closest('.icon-btn');
+    function handlePinClick(e) {
+        const btn = e.target.closest('.pin-btn');
         if (!btn) return;
 
         const fieldId = btn.dataset.fieldId;
+        const action = btn.dataset.pinAction;
 
-        if (btn.classList.contains('pin-btn')) {
+        if (action === 'pin') { // 개별 -> 공통
+            if (!pinnedFields.includes(fieldId)) pinnedFields.push(fieldId);
+            const valueFromFirstItem = items.length > 0 ? (items[0][fieldId] || '') : '';
+            commonData[fieldId] = valueFromFirstItem;
+            items.forEach(item => delete item[fieldId]);
+
+        } else if (action === 'unpin') { // 공통 -> 개별
             const index = pinnedFields.indexOf(fieldId);
             if (index > -1) pinnedFields.splice(index, 1);
-            else pinnedFields.push(fieldId);
-        } else if (btn.classList.contains('hide-btn')) {
-            if (!hiddenFields.includes(fieldId)) hiddenFields.push(fieldId);
+            const valueFromCommon = commonData[fieldId] || '';
+            items.forEach(item => item[fieldId] = valueFromCommon);
+            delete commonData[fieldId];
         }
+        render();
+    }
+
+    function handleIconClick(e) {
+        const btn = e.target.closest('.hide-btn');
+        if (!btn) return;
+        const fieldId = btn.dataset.fieldId;
+        if (!hiddenFields.includes(fieldId)) hiddenFields.push(fieldId);
         render();
     }
 
@@ -415,9 +457,14 @@
 
     document.getElementById('common-restore-section').addEventListener('click', handleRestoreClick);
     document.getElementById('item-restore-section').addEventListener('click', handleRestoreClick);
-    commonInputsContainer.addEventListener('click', handleIconClick);
+
+    commonInputsContainer.addEventListener('click', (e) => {
+        handleIconClick(e);
+        handlePinClick(e);
+    });
     itemsContainer.addEventListener('click', (e) => {
-        if(e.target.closest('.icon-btn')) handleIconClick(e);
+        handleIconClick(e);
+        handlePinClick(e);
         if (e.target.classList.contains('remove-item-btn')) {
             items.splice(e.target.closest('.item-card').dataset.index, 1);
             if (items.length === 0) items.push({});
@@ -425,37 +472,58 @@
         }
     });
 
+    // ⭐ BUG FIX: 통합 이벤트 리스너로 변경
     commonInputsContainer.addEventListener('input', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
             const fieldId = e.target.id.replace('common_', '');
             commonData[fieldId] = e.target.value;
-            saveState();
+
+            // 거래처 선택 시 계좌정보 자동 완성 로직 추가
+            if (fieldId === 'vendor') {
+                const vendor = vendors[e.target.value];
+                if (vendor) {
+                    commonData['account'] = vendor.account || '';
+                }
+            }
+
+            // 모든 상태 변경이 끝난 후 UI를 한 번만 업데이트하여 데이터 누락 방지
+            render();
         }
     });
 
     applyCommonBtn.addEventListener('click', () => {
-        items.forEach((item, index) => {
-            Object.assign(item, commonData);
+        items.forEach((_, index) => {
+            pinnedFields.forEach(fieldId => {
+                const element = document.getElementById(`${fieldId}_${index}`);
+                if (element) {
+                    element.classList.add('highlight');
+                    setTimeout(() => element.classList.remove('highlight'), 1200);
+                }
+            });
         });
-        document.querySelectorAll('#common-inputs-container input, #common-inputs-container select').forEach(el => {
-            el.classList.add('highlight');
-            setTimeout(() => el.classList.remove('highlight'), 1200);
-        });
-        render();
     });
 
     addItemBtn.addEventListener('click', () => {
-        items.push({});
+        const lastItem = items[items.length - 1] || {};
+        const newItem = {};
+        const templateFields = formTemplates[currentFormType].fields;
+        templateFields.forEach(field => {
+            if(!pinnedFields.includes(field.id) && lastItem[field.id] !== undefined) {
+                 newItem[field.id] = lastItem[field.id];
+            }
+        });
+        items.push(newItem);
+
         render();
         const newCard = itemsContainer.lastElementChild;
         if (newCard) {
-            newCard.querySelector('input')?.focus();
+            newCard.querySelector('input:not([readonly]), select:not([disabled])')?.focus();
             newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
     });
 
     itemsContainer.addEventListener('input', (e) => {
-        if (e.target.tagName === 'INPUT') {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
             const index = e.target.closest('.item-card').dataset.index;
             const fieldId = e.target.id.split('_')[0];
             items[index][fieldId] = e.target.value;
@@ -464,12 +532,13 @@
     });
 
     formTypeSelector.addEventListener('change', (e) => {
-        if (confirm('양식을 변경하면 현재 작성된 항목과 모든 설정(핀, 숨김)이 초기화됩니다. 계속하시겠습니까?')) {
+        if (confirm('양식을 변경하면 현재 작성된 항목과 모든 설정이 초기화됩니다. 계속하시겠습니까?')) {
             currentFormType = e.target.value;
             items = [{}];
-            pinnedFields = [];
             hiddenFields = [];
+            pinnedFields = [...DEFAULT_PINNED_IDS];
             commonData = {};
+            localStorage.removeItem('wehagoFormData');
             render();
         } else {
             e.target.value = currentFormType;
@@ -477,32 +546,15 @@
     });
 
     resetBtn.addEventListener('click', () => {
-        if (confirm('정말로 모든 항목과 설정(핀, 숨김)을 지우고 새로 작성하시겠습니까?')) {
+        if (confirm('정말로 모든 항목과 설정을 지우고 새로 작성하시겠습니까?')) {
             items = [{}];
-            pinnedFields = [];
             hiddenFields = [];
+            pinnedFields = [...DEFAULT_PINNED_IDS];
             commonData = {};
+            const formType = formTypeSelector.value;
             localStorage.removeItem('wehagoFormData');
+            saveState();
             render();
-        }
-    });
-
-    document.getElementById('common-inputs-container').addEventListener('change', e => {
-        if (e.target.id === 'common_vendor') {
-            const vendor = vendors[e.target.value];
-            if (vendor) {
-                const pmEl = document.getElementById('common_paymentMethod');
-                const accEl = document.getElementById('common_account');
-                if (pmEl) {
-                    pmEl.value = vendor.paymentMethod || '';
-                    commonData['paymentMethod'] = pmEl.value;
-                }
-                if (accEl) {
-                    accEl.value = vendor.account || '';
-                    commonData['account'] = accEl.value;
-                }
-                saveState();
-            }
         }
     });
 
@@ -513,20 +565,16 @@
         const TD_V = `padding: 8px; vertical-align: top; ${FONT}`;
         const header = `<tr><td style="${TD_L}">${template.title}</td>${items.map((_, i) => `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i+1}</td>`).join('')}</tr>`;
 
-        const finalCommonData = {};
-        const commonFieldIds = [...BASE_COMMON_FIELDS.map(f => f.id), ...pinnedFields];
-        commonFieldIds.forEach(fieldId => {
-             const el = document.getElementById(`common_${fieldId}`);
-             if (el) finalCommonData[fieldId] = el.value;
-        });
-
-        // [수정] 숨겨진 항목을 제외하고 복사하도록 수정
-        const fieldsToCopy = template.fields.filter(field => !hiddenFields.includes(field.id));
+        const allVisibleFields = template.fields.filter(field => !hiddenFields.includes(field.id));
+        const fieldsToCopy = [
+            ...allVisibleFields.filter(f => pinnedFields.includes(f.id)),
+            ...allVisibleFields.filter(f => !pinnedFields.includes(f.id))
+        ];
 
         const bodyRows = fieldsToCopy.map(field => {
-            const isCommonField = commonFieldIds.includes(field.id);
+            const isPinned = pinnedFields.includes(field.id);
             return `<tr><td style="${TD_L}">${field.label}</td>${items.map(item => {
-                const value = isCommonField ? (finalCommonData[field.id] || '') : (item[field.id] || '');
+                const value = isPinned ? (commonData[field.id] || '') : (item[field.id] || '');
                 return `<td style="${TD_V}">${(value || '').replace(/\n/g, '<br>')}</td>`;
             }).join('')}</tr>`;
         }).join('');
