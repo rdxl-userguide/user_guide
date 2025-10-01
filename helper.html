@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (v2.2 - 사용자 안내 추가)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (Beta)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -48,7 +48,7 @@
         input::placeholder { color: #cbd5e0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
 
-        /* --- [추가] 안내 문구 스타일 --- */
+        /* --- 안내 문구 스타일 --- */
         .app-description {
             text-align: center;
             color: var(--text-light);
@@ -71,6 +71,15 @@
         .icon-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0 0 0 0.5rem; line-height: 1; opacity: 0.3; transition: opacity 0.2s; }
         .icon-btn:hover { opacity: 1; }
         .hide-btn { font-size: 1.2rem; font-weight: bold; }
+        .request-link {
+            display: block;
+            text-align: right;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .request-link:hover { text-decoration: underline; }
 
         /* --- 숨김/복원 기능 --- */
         .restore-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); }
@@ -95,12 +104,23 @@
         .highlight { transition: box-shadow 0.1s; box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.4); }
         .header-controls { display:flex; justify-content:space-between; align-items:center; }
 
-        /* --- 버전 정보 --- */
-        .version-info {
+        /* --- [수정] 피드백 및 버전 정보 --- */
+        .feedback-notice {
             text-align: center;
             margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
             color: var(--text-light);
-            font-size: 0.875rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .feedback-notice a {
+            color: var(--primary-color);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .feedback-notice a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -158,8 +178,13 @@
     </div>
 </div>
 
-<div class="version-info">
-    Version 2.2 (2025.10.01)
+<div class="feedback-notice">
+    <p>
+        본 폼 생성기는 현재 베타 테스트(v2.2) 중입니다. <br>
+        거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
+        <b>FOR RADEXEL INC. USE ONLY</b><br>
+
+    </p>
 </div>
 
 <script>
@@ -293,6 +318,7 @@
             const pinButton = isPinned ? `<button class="icon-btn pin-btn" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
             const value = commonData[field.id] || '';
             let inputHtml = `<div><div class="label-wrapper"><label for="common_${field.id}">${field.label}</label><div class="label-icons">${pinButton}<button class="icon-btn hide-btn" data-field-id="${field.id}" title="항목 숨기기">×</button></div></div>`;
+
             if (field.id === 'vendor') {
                 const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
                 inputHtml += `<select id="common_${field.id}"><option value="">-- 직접 입력 --</option>${optionsHtml}</select>`;
@@ -504,11 +530,8 @@
         resizeTimer = setTimeout(() => { adjustContainerWidth(); }, 150);
     });
 
-    // 페이지 로드 시, 저장된 데이터를 불러온 후 화면을 그림
     loadState();
     render();
 </script>
 </body>
 </html>
-
-
