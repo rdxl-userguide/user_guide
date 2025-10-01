@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (v2.1 - 완전 자동 저장)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (v2.2 - 사용자 안내 추가)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -37,7 +37,7 @@
         }
 
         /* --- 공통 스타일 --- */
-        h1 { font-size: 2rem; color: var(--text-dark); text-align: center; margin-bottom: 2.5rem; }
+        h1 { font-size: 2rem; color: var(--text-dark); text-align: center; margin-bottom: 1rem; }
         .section { background: var(--background-white); padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
         h2 { font-size: 1.25rem; color: var(--text-dark); margin-top: 0; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
         .label-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
@@ -47,6 +47,21 @@
         input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.15); }
         input::placeholder { color: #cbd5e0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+
+        /* --- [추가] 안내 문구 스타일 --- */
+        .app-description {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 2.5rem;
+            font-size: 0.9rem;
+        }
+        .section-description {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: -0.75rem;
+            margin-bottom: 1.5rem;
+            padding-left: 0.25rem;
+        }
 
         /* --- 버튼 & 아이콘 --- */
         .button { display: inline-block; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 600; color: white; background-color: var(--primary-color); border: none; border-radius: 0.5rem; cursor: pointer; text-align: center; transition: background-color 0.2s; }
@@ -94,6 +109,8 @@
 <div class="main-wrapper">
     <div class="fixed-width-container">
         <h1>WEHAGO 전자결재 폼 생성기 💡</h1>
+        <p class="app-description">모든 입력 내용과 설정(핀, 숨김)은 새로고침해도 사라지지 않고 자동으로 브라우저에 임시 저장됩니다.</p>
+
         <div class="section" style="margin-bottom: 2rem;">
             <div class="header-controls">
                 <h2>0. 양식 종류 선택</h2>
@@ -114,6 +131,7 @@
             <div class="header-controls">
                 <h2>1. 공통 정보 입력</h2>
             </div>
+            <p class="section-description">여기에 입력한 정보는 '모든 항목에 적용' 버튼으로 한 번에 반영할 수 있습니다.</p>
             <div class="grid" id="common-inputs-container"></div>
             <div id="common-restore-section" class="restore-section" style="display: none;"></div>
             <button id="apply-common-btn" class="button" style="margin-top: 1rem;">[↓] 모든 항목에 공통 정보 적용</button>
@@ -126,6 +144,7 @@
                 <h2>2. 세부 항목 입력</h2>
                 <button id="add-item-btn" class="button button-secondary">[+] 항목 추가</button>
             </div>
+             <p class="section-description">각 항목의 📌 아이콘으로 필드를 공통 정보로 옮기거나, × 아이콘으로 숨길 수 있습니다.</p>
             <div id="items-container-wrapper">
                 <div id="items-container"></div>
             </div>
@@ -140,7 +159,7 @@
 </div>
 
 <div class="version-info">
-    Version 2.1 (2025.10.01) - 완전 자동 저장
+    Version 2.2 (2025.10.01) - 사용자 안내 추가
 </div>
 
 <script>
@@ -211,7 +230,7 @@
     let currentFormType = 'general_expense';
     let pinnedFields = [];
     let hiddenFields = [];
-    let commonData = {}; // 공통 정보 입력을 임시 저장할 객체
+    let commonData = {};
 
     const expandableContainer = document.querySelector('.expandable-width-container');
     const commonInputsContainer = document.getElementById('common-inputs-container');
@@ -222,12 +241,10 @@
     const formTypeSelector = document.getElementById('masterFormType');
     const resetBtn = document.getElementById('reset-btn');
 
-    // [수정] saveState 함수에 공통 정보(commonData) 저장 로직 추가
     const saveState = () => {
         localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType, pinnedFields, hiddenFields, commonData }));
     };
 
-    // [수정] loadState 함수에서 공통 정보(commonData) 불러오기 로직 추가
     const loadState = () => {
         try {
             const savedState = localStorage.getItem('wehagoFormData');
@@ -237,7 +254,7 @@
                 currentFormType = data.currentFormType || 'general_expense';
                 pinnedFields = data.pinnedFields || [];
                 hiddenFields = data.hiddenFields || [];
-                commonData = data.commonData || {}; // 저장된 공통 정보 불러오기
+                commonData = data.commonData || {};
                 formTypeSelector.value = currentFormType;
             }
         } catch (e) { console.error("Could not load state", e); }
@@ -274,10 +291,9 @@
         commonInputsContainer.innerHTML = visibleCommonFields.map(field => {
             const isPinned = pinnedFields.includes(field.id);
             const pinButton = isPinned ? `<button class="icon-btn pin-btn" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
-            const value = commonData[field.id] || ''; // 저장된 공통 정보 값 불러오기
+            const value = commonData[field.id] || '';
             let inputHtml = `<div><div class="label-wrapper"><label for="common_${field.id}">${field.label}</label><div class="label-icons">${pinButton}<button class="icon-btn hide-btn" data-field-id="${field.id}" title="항목 숨기기">×</button></div></div>`;
             if (field.id === 'vendor') {
-                // select 태그의 경우, value를 직접 설정하기 어려우므로 option을 순회하며 selected를 지정합니다.
                 const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
                 inputHtml += `<select id="common_${field.id}"><option value="">-- 직접 입력 --</option>${optionsHtml}</select>`;
             } else {
@@ -311,7 +327,7 @@
 
         if (items.length === 1) itemsContainer.querySelector('.item-card')?.classList.add('single-item');
         adjustContainerWidth();
-        saveState(); // render가 호출될 때마다 저장
+        saveState();
     }
 
     function renderRestoreSection(sectionId, hiddenFields) {
@@ -326,8 +342,6 @@
             sectionEl.innerHTML = '';
         }
     }
-
-    // --- EVENT LISTENERS ---
 
     function handleIconClick(e) {
         const btn = e.target.closest('.icon-btn');
@@ -369,7 +383,6 @@
         }
     });
 
-    // [추가] 공통 정보 입력 시 실시간으로 commonData 객체에 저장하고, 전체 상태 저장
     commonInputsContainer.addEventListener('input', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
             const fieldId = e.target.id.replace('common_', '');
@@ -386,7 +399,7 @@
             el.classList.add('highlight');
             setTimeout(() => el.classList.remove('highlight'), 1200);
         });
-        render(); // 데이터를 item으로 넘기고 화면을 다시 그려서 item 카드에도 반영
+        render();
     });
 
     addItemBtn.addEventListener('click', () => {
@@ -440,11 +453,11 @@
                 const accEl = document.getElementById('common_account');
                 if (pmEl) {
                     pmEl.value = vendor.paymentMethod || '';
-                    commonData['paymentMethod'] = pmEl.value; // commonData도 업데이트
+                    commonData['paymentMethod'] = pmEl.value;
                 }
                 if (accEl) {
                     accEl.value = vendor.account || '';
-                    commonData['account'] = accEl.value; // commonData도 업데이트
+                    commonData['account'] = accEl.value;
                 }
                 saveState();
             }
