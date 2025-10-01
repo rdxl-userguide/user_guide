@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기</title>
+    <title>WEHAGO 인텔리전트 폼 생성기 (v2.1 - 완전 자동 저장)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -93,7 +93,7 @@
 
 <div class="main-wrapper">
     <div class="fixed-width-container">
-        <h1>WEHAGO 전자결재 폼 생성기 💡</h1>
+        <h1>WEHAGO 인텔리전트 폼 생성기 💡</h1>
         <div class="section" style="margin-bottom: 2rem;">
             <div class="header-controls">
                 <h2>0. 양식 종류 선택</h2>
@@ -140,7 +140,7 @@
 </div>
 
 <div class="version-info">
-    Version 2.0 (2025.10.01)
+    Version 2.1 (2025.10.01) - 완전 자동 저장
 </div>
 
 <script>
@@ -211,6 +211,7 @@
     let currentFormType = 'general_expense';
     let pinnedFields = [];
     let hiddenFields = [];
+    let commonData = {}; // 공통 정보 입력을 임시 저장할 객체
 
     const expandableContainer = document.querySelector('.expandable-width-container');
     const commonInputsContainer = document.getElementById('common-inputs-container');
@@ -221,7 +222,12 @@
     const formTypeSelector = document.getElementById('masterFormType');
     const resetBtn = document.getElementById('reset-btn');
 
-    const saveState = () => localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType, pinnedFields, hiddenFields }));
+    // [수정] saveState 함수에 공통 정보(commonData) 저장 로직 추가
+    const saveState = () => {
+        localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType, pinnedFields, hiddenFields, commonData }));
+    };
+
+    // [수정] loadState 함수에서 공통 정보(commonData) 불러오기 로직 추가
     const loadState = () => {
         try {
             const savedState = localStorage.getItem('wehagoFormData');
@@ -231,6 +237,7 @@
                 currentFormType = data.currentFormType || 'general_expense';
                 pinnedFields = data.pinnedFields || [];
                 hiddenFields = data.hiddenFields || [];
+                commonData = data.commonData || {}; // 저장된 공통 정보 불러오기
                 formTypeSelector.value = currentFormType;
             }
         } catch (e) { console.error("Could not load state", e); }
@@ -266,12 +273,15 @@
 
         commonInputsContainer.innerHTML = visibleCommonFields.map(field => {
             const isPinned = pinnedFields.includes(field.id);
-            const pinButton = isPinned ? `<button class="icon-btn" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
+            const pinButton = isPinned ? `<button class="icon-btn pin-btn" data-field-id="${field.id}" title="세부 항목으로 되돌리기">📌</button>` : '';
+            const value = commonData[field.id] || ''; // 저장된 공통 정보 값 불러오기
             let inputHtml = `<div><div class="label-wrapper"><label for="common_${field.id}">${field.label}</label><div class="label-icons">${pinButton}<button class="icon-btn hide-btn" data-field-id="${field.id}" title="항목 숨기기">×</button></div></div>`;
             if (field.id === 'vendor') {
-                inputHtml += `<select id="common_${field.id}"><option value="">-- 직접 입력 --</option>${Object.keys(vendors).map(k => `<option value="${k}">${k}</option>`).join('')}</select>`;
+                // select 태그의 경우, value를 직접 설정하기 어려우므로 option을 순회하며 selected를 지정합니다.
+                const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
+                inputHtml += `<select id="common_${field.id}"><option value="">-- 직접 입력 --</option>${optionsHtml}</select>`;
             } else {
-                inputHtml += `<input type="text" id="common_${field.id}" placeholder="${field.example || ''}">`;
+                inputHtml += `<input type="text" id="common_${field.id}" value="${value}" placeholder="${field.example || ''}">`;
             }
             return inputHtml + `</div>`;
         }).join('');
@@ -287,7 +297,7 @@
                             <div class="label-wrapper">
                                 <label for="${field.id}_${index}">${field.label}</label>
                                 <div class="label-icons">
-                                    <button class="icon-btn" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
+                                    <button class="icon-btn pin-btn" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
                                     <button class="icon-btn hide-btn" data-field-id="${field.id}" title="항목 숨기기">×</button>
                                 </div>
                             </div>
@@ -301,7 +311,7 @@
 
         if (items.length === 1) itemsContainer.querySelector('.item-card')?.classList.add('single-item');
         adjustContainerWidth();
-        saveState();
+        saveState(); // render가 호출될 때마다 저장
     }
 
     function renderRestoreSection(sectionId, hiddenFields) {
@@ -317,27 +327,20 @@
         }
     }
 
+    // --- EVENT LISTENERS ---
+
     function handleIconClick(e) {
         const btn = e.target.closest('.icon-btn');
         if (!btn) return;
 
         const fieldId = btn.dataset.fieldId;
 
-        // This is a simplified check. A more robust way is to check classList.
-        if (btn.title.includes('고정')) { // Pinning
+        if (btn.classList.contains('pin-btn')) {
             const index = pinnedFields.indexOf(fieldId);
-            if (index > -1) {
-                // This logic is flawed, unpinning should happen in common section
-            } else {
-                pinnedFields.push(fieldId);
-            }
-        } else if (btn.title.includes('되돌리기')) { // Unpinning
-             const index = pinnedFields.indexOf(fieldId);
-             if (index > -1) pinnedFields.splice(index, 1);
+            if (index > -1) pinnedFields.splice(index, 1);
+            else pinnedFields.push(fieldId);
         } else if (btn.classList.contains('hide-btn')) {
-            if (!hiddenFields.includes(fieldId)) {
-                hiddenFields.push(fieldId);
-            }
+            if (!hiddenFields.includes(fieldId)) hiddenFields.push(fieldId);
         }
         render();
     }
@@ -354,27 +357,11 @@
         }
     }
 
-    // A more robust icon handler
-    function masterIconHandler(e) {
-        const btn = e.target.closest('.icon-btn');
-        if(!btn) return;
-        const fieldId = btn.dataset.fieldId;
-
-        if(btn.title.includes('고정') || btn.title.includes('되돌리기')) {
-            const index = pinnedFields.indexOf(fieldId);
-            if (index > -1) pinnedFields.splice(index, 1); // unpin
-            else pinnedFields.push(fieldId); // pin
-        } else if (btn.classList.contains('hide-btn')) {
-            if (!hiddenFields.includes(fieldId)) hiddenFields.push(fieldId);
-        }
-        render();
-    }
-
     document.getElementById('common-restore-section').addEventListener('click', handleRestoreClick);
     document.getElementById('item-restore-section').addEventListener('click', handleRestoreClick);
-    commonInputsContainer.addEventListener('click', masterIconHandler);
+    commonInputsContainer.addEventListener('click', handleIconClick);
     itemsContainer.addEventListener('click', (e) => {
-        if(e.target.closest('.icon-btn')) masterIconHandler(e);
+        if(e.target.closest('.icon-btn')) handleIconClick(e);
         if (e.target.classList.contains('remove-item-btn')) {
             items.splice(e.target.closest('.item-card').dataset.index, 1);
             if (items.length === 0) items.push({});
@@ -382,24 +369,24 @@
         }
     });
 
+    // [추가] 공통 정보 입력 시 실시간으로 commonData 객체에 저장하고, 전체 상태 저장
+    commonInputsContainer.addEventListener('input', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+            const fieldId = e.target.id.replace('common_', '');
+            commonData[fieldId] = e.target.value;
+            saveState();
+        }
+    });
+
     applyCommonBtn.addEventListener('click', () => {
-        const commonData = {};
-        const commonFieldIds = [...BASE_COMMON_FIELDS.map(f => f.id), ...pinnedFields];
-
-        commonFieldIds.forEach(fieldId => {
-             const el = document.getElementById(`common_${fieldId}`);
-             if (el) commonData[fieldId] = el.value;
-        });
-
         items.forEach((item, index) => {
             Object.assign(item, commonData);
         });
-
         document.querySelectorAll('#common-inputs-container input, #common-inputs-container select').forEach(el => {
             el.classList.add('highlight');
             setTimeout(() => el.classList.remove('highlight'), 1200);
         });
-        saveState();
+        render(); // 데이터를 item으로 넘기고 화면을 다시 그려서 item 카드에도 반영
     });
 
     addItemBtn.addEventListener('click', () => {
@@ -427,6 +414,7 @@
             items = [{}];
             pinnedFields = [];
             hiddenFields = [];
+            commonData = {};
             render();
         } else {
             e.target.value = currentFormType;
@@ -438,9 +426,9 @@
             items = [{}];
             pinnedFields = [];
             hiddenFields = [];
+            commonData = {};
             localStorage.removeItem('wehagoFormData');
             render();
-            document.querySelectorAll('#common-inputs-container input, #common-inputs-container select').forEach(el => el.value = '');
         }
     });
 
@@ -450,8 +438,15 @@
             if (vendor) {
                 const pmEl = document.getElementById('common_paymentMethod');
                 const accEl = document.getElementById('common_account');
-                if (pmEl) pmEl.value = vendor.paymentMethod || '';
-                if (accEl) accEl.value = vendor.account || '';
+                if (pmEl) {
+                    pmEl.value = vendor.paymentMethod || '';
+                    commonData['paymentMethod'] = pmEl.value; // commonData도 업데이트
+                }
+                if (accEl) {
+                    accEl.value = vendor.account || '';
+                    commonData['account'] = accEl.value; // commonData도 업데이트
+                }
+                saveState();
             }
         }
     });
@@ -463,17 +458,17 @@
         const TD_V = `padding: 8px; vertical-align: top; ${FONT}`;
         const header = `<tr><td style="${TD_L}">${template.title}</td>${items.map((_, i) => `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i+1}</td>`).join('')}</tr>`;
 
-        const commonData = {};
+        const finalCommonData = {};
         const commonFieldIds = [...BASE_COMMON_FIELDS.map(f => f.id), ...pinnedFields];
         commonFieldIds.forEach(fieldId => {
              const el = document.getElementById(`common_${fieldId}`);
-             if (el) commonData[fieldId] = el.value;
+             if (el) finalCommonData[fieldId] = el.value;
         });
 
         const bodyRows = template.fields.map(field => {
             const isCommonField = commonFieldIds.includes(field.id);
             return `<tr><td style="${TD_L}">${field.label}</td>${items.map(item => {
-                const value = isCommonField ? (commonData[field.id] || '') : (item[field.id] || '');
+                const value = isCommonField ? (finalCommonData[field.id] || '') : (item[field.id] || '');
                 return `<td style="${TD_V}">${(value || '').replace(/\n/g, '<br>')}</td>`;
             }).join('')}</tr>`;
         });
@@ -496,9 +491,9 @@
         resizeTimer = setTimeout(() => { adjustContainerWidth(); }, 150);
     });
 
+    // 페이지 로드 시, 저장된 데이터를 불러온 후 화면을 그림
     loadState();
     render();
 </script>
 </body>
 </html>
-
