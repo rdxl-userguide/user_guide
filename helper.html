@@ -173,15 +173,14 @@
 
 <div class="footer-notice">
     <p>
-        본 폼 생성기는 현재 베타 테스트 중입니다. (v3.2)<br>
+        위하고 폼 생성기 베타 테스트 (v3.2)<br>
         거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
         <b>FOR RADEXEL INC. USE ONLY</b>
     </p>
 </div>
 
-
 <script>
-    // --- (v3.2) 수정된 JavaScript 코드 (버그 수정) ---
+    // --- (v3.4) 수정된 JavaScript 코드 (세부 항목 결제수단 직접 입력) ---
     const vendors = {
         '특허법인 비엘티': { account: '우리은행 / 1005303954125 / 예금주: 특허법인 비엘티' },
         '(주)건우산업': { account: 'IBK기업은행 / 52304175001011 / 예금주: (주)건우산업' },
@@ -284,6 +283,8 @@
     const formTypeSelector = document.getElementById('masterFormType');
     const resetBtn = document.getElementById('reset-btn');
 
+    applyCommonBtn.textContent = '[↓] 공통 정보 일괄 적용';
+
     const saveState = () => {
         localStorage.setItem('wehagoFormData', JSON.stringify({ items, currentFormType, hiddenFields, pinnedFields, commonData }));
     };
@@ -322,7 +323,6 @@
         const template = formTemplates[currentFormType];
         const allFields = template.fields;
 
-        // --- 1. Render Common Info Section (Pinned Fields) ---
         const visiblePinnedFields = allFields.filter(f => pinnedFields.includes(f.id) && !hiddenFields.includes(f.id));
         commonInputsContainer.innerHTML = visiblePinnedFields.map(field => {
             const value = commonData[field.id] || '';
@@ -347,22 +347,17 @@
             return inputHtml + `</div>`;
         }).join('');
 
-        // --- 2. Render Item Section (All visible fields) ---
         const allVisibleFields = allFields.filter(f => !hiddenFields.includes(f.id));
         itemsContainer.innerHTML = items.map((itemData, index) => {
             const itemFieldsHtml = allVisibleFields.map(field => {
                 const isPinned = pinnedFields.includes(field.id);
-                const value = isPinned ? (commonData[field.id] || '') : (itemData[field.id] || '');
+                const value = itemData[field.id] || '';
                 const uniqueId = `${field.id}_${index}`;
 
-                let iconsHtml = '';
-                if (isPinned) {
-                    iconsHtml = `<button class="icon-btn lock-icon" title="공통 항목입니다. 위에서 수정하세요.">🔒</button>`;
-                } else {
-                    iconsHtml = `
-                        <button class="icon-btn pin-btn" data-pin-action="pin" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
-                        <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>`;
-                }
+                let iconsHtml = isPinned
+                    ? `<button class="icon-btn lock-icon" title="공통 항목입니다. 위에서 일괄 적용할 수 있습니다.">🔒</button>`
+                    : `<button class="icon-btn pin-btn" data-pin-action="pin" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
+                       <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>`;
 
                 let fieldHtml = `<div>
                     <div class="label-wrapper">
@@ -370,12 +365,21 @@
                         <div class="label-icons">${iconsHtml}</div>
                     </div>`;
 
+                // --- ▼▼▼ 여기가 유일하게 수정된 부분입니다 ▼▼▼ ---
                 if (field.type === 'select') {
-                    const optionsHtml = field.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('');
-                    fieldHtml += `<select id="${uniqueId}" ${isPinned ? 'disabled' : ''}><option value="">-- 선택 --</option>${optionsHtml}</select>`;
+                    // 세부 항목의 '결제수단'만 input[type=text]으로 렌더링
+                    if (field.id === 'paymentMethod') {
+                         fieldHtml += `<input type="text" id="${uniqueId}" value="${value}" placeholder="직접 입력...">`;
+                    } else {
+                        // 다른 select 필드는 기존대로 렌더링
+                        const optionsHtml = field.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('');
+                        fieldHtml += `<select id="${uniqueId}"><option value="">-- 선택 --</option>${optionsHtml}</select>`;
+                    }
                 } else {
-                     fieldHtml += `<input type="text" id="${uniqueId}" value="${value}" placeholder="${field.example || ''}" ${isPinned ? 'readonly' : ''}>`;
+                     fieldHtml += `<input type="text" id="${uniqueId}" value="${value}" placeholder="${field.example || ''}">`;
                 }
+                // --- ▲▲▲ 여기가 유일하게 수정된 부분입니다 ▲▲▲ ---
+
                 return fieldHtml + `</div>`;
             }).join('');
 
@@ -386,14 +390,11 @@
                 </div>`;
         }).join('');
 
-        // --- 3. Render Restore Sections ---
         const hiddenCommonFields = allFields.filter(f => hiddenFields.includes(f.id) && pinnedFields.includes(f.id));
         const hiddenItemOnlyFields = allFields.filter(f => hiddenFields.includes(f.id) && !pinnedFields.includes(f.id));
-
         renderRestoreSection('common-restore-section', hiddenCommonFields);
         renderRestoreSection('item-restore-section', hiddenItemOnlyFields);
 
-        // --- 4. Final Adjustments ---
         if (items.length === 1) itemsContainer.querySelector('.item-card')?.classList.add('single-item');
         adjustContainerWidth();
         saveState();
@@ -408,7 +409,6 @@
                 <div class="restore-list">${hiddenFields.map(f => `<button class="restore-btn" data-field-id="${f.id}">${f.label}</button>`).join('')}</div>`;
         } else {
             sectionEl.style.display = 'none';
-            sectionEl.innerHTML = '';
         }
     }
 
@@ -419,18 +419,14 @@
         const fieldId = btn.dataset.fieldId;
         const action = btn.dataset.pinAction;
 
-        if (action === 'pin') { // 개별 -> 공통
+        if (action === 'pin') {
             if (!pinnedFields.includes(fieldId)) pinnedFields.push(fieldId);
             const valueFromFirstItem = items.length > 0 ? (items[0][fieldId] || '') : '';
             commonData[fieldId] = valueFromFirstItem;
-            items.forEach(item => delete item[fieldId]);
-
-        } else if (action === 'unpin') { // 공통 -> 개별
+            items.forEach(item => item[fieldId] = valueFromFirstItem);
+        } else if (action === 'unpin') {
             const index = pinnedFields.indexOf(fieldId);
             if (index > -1) pinnedFields.splice(index, 1);
-            const valueFromCommon = commonData[fieldId] || '';
-            items.forEach(item => item[fieldId] = valueFromCommon);
-            delete commonData[fieldId];
         }
         render();
     }
@@ -472,26 +468,26 @@
         }
     });
 
-    // ⭐ BUG FIX: 통합 이벤트 리스너로 변경
     commonInputsContainer.addEventListener('input', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
             const fieldId = e.target.id.replace('common_', '');
             commonData[fieldId] = e.target.value;
-
-            // 거래처 선택 시 계좌정보 자동 완성 로직 추가
-            if (fieldId === 'vendor') {
-                const vendor = vendors[e.target.value];
-                if (vendor) {
-                    commonData['account'] = vendor.account || '';
-                }
+            if (fieldId === 'vendor' && vendors[e.target.value]) {
+                commonData['account'] = vendors[e.target.value].account || '';
+                const accountInput = document.getElementById('common_account');
+                if(accountInput) accountInput.value = commonData['account'];
             }
-
-            // 모든 상태 변경이 끝난 후 UI를 한 번만 업데이트하여 데이터 누락 방지
-            render();
+            saveState();
         }
     });
 
     applyCommonBtn.addEventListener('click', () => {
+        items.forEach(item => {
+            pinnedFields.forEach(fieldId => {
+                item[fieldId] = commonData[fieldId] || '';
+            });
+        });
+        render();
         items.forEach((_, index) => {
             pinnedFields.forEach(fieldId => {
                 const element = document.getElementById(`${fieldId}_${index}`);
@@ -507,8 +503,11 @@
         const lastItem = items[items.length - 1] || {};
         const newItem = {};
         const templateFields = formTemplates[currentFormType].fields;
+
         templateFields.forEach(field => {
-            if(!pinnedFields.includes(field.id) && lastItem[field.id] !== undefined) {
+            if (pinnedFields.includes(field.id)) {
+                newItem[field.id] = commonData[field.id] || '';
+            } else if (lastItem[field.id] !== undefined) {
                  newItem[field.id] = lastItem[field.id];
             }
         });
@@ -517,7 +516,7 @@
         render();
         const newCard = itemsContainer.lastElementChild;
         if (newCard) {
-            newCard.querySelector('input:not([readonly]), select:not([disabled])')?.focus();
+            newCard.querySelector('input, select')?.focus();
             newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
     });
@@ -538,6 +537,9 @@
             hiddenFields = [];
             pinnedFields = [...DEFAULT_PINNED_IDS];
             commonData = {};
+            pinnedFields.forEach(fieldId => {
+                items[0][fieldId] = commonData[fieldId] || '';
+            });
             localStorage.removeItem('wehagoFormData');
             render();
         } else {
@@ -551,9 +553,10 @@
             hiddenFields = [];
             pinnedFields = [...DEFAULT_PINNED_IDS];
             commonData = {};
-            const formType = formTypeSelector.value;
+            pinnedFields.forEach(fieldId => {
+                items[0][fieldId] = commonData[fieldId] || '';
+            });
             localStorage.removeItem('wehagoFormData');
-            saveState();
             render();
         }
     });
@@ -572,9 +575,8 @@
         ];
 
         const bodyRows = fieldsToCopy.map(field => {
-            const isPinned = pinnedFields.includes(field.id);
             return `<tr><td style="${TD_L}">${field.label}</td>${items.map(item => {
-                const value = isPinned ? (commonData[field.id] || '') : (item[field.id] || '');
+                const value = item[field.id] || '';
                 return `<td style="${TD_V}">${(value || '').replace(/\n/g, '<br>')}</td>`;
             }).join('')}</tr>`;
         }).join('');
