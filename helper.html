@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (v3.2 - 버그 수정)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (v3.3)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -173,7 +173,7 @@
 
 <div class="footer-notice">
     <p>
-        위하고 폼 생성기 베타 테스트 (v3.2)<br>
+        위하고 폼 생성기 베타 테스트 (v3.3-순서 변경)<br>
         거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
         <b>FOR RADEXEL INC. USE ONLY</b>
     </p>
@@ -323,7 +323,26 @@
         const template = formTemplates[currentFormType];
         const allFields = template.fields;
 
-        const visiblePinnedFields = allFields.filter(f => pinnedFields.includes(f.id) && !hiddenFields.includes(f.id));
+        // 표시 우선순위(앞에 있을수록 위쪽). 목록에 없는 필드는 기존 템플릿 내 상대순서 유지
+        const FIELD_ORDER = [
+            'itemName','service','course','license','tripObjective',
+            'purpose','spec','relatedTask',
+            'vendor',
+            'qty','seats','unitPrice','amount',
+            'date','periodFrom','periodTo',
+            'isRecurring','recurringPeriod','recurringDate',
+            'paymentMethod','account',
+            'origin','destination','place','attendees','provider','manufacturer',
+            'ipMgmtNo','invoiceNo','proof',
+            'user','paymentTerms','note'
+        ];
+        const orderIndex = (id) => {
+            const i = FIELD_ORDER.indexOf(id);
+            return i === -1 ? 1000 + allFields.findIndex(f => f.id === id) : i;
+        };
+        const sortFields = (arr) => arr.slice().sort((a, b) => orderIndex(a.id) - orderIndex(b.id));
+
+        const visiblePinnedFields = sortFields(allFields.filter(f => pinnedFields.includes(f.id) && !hiddenFields.includes(f.id)));
         commonInputsContainer.innerHTML = visiblePinnedFields.map(field => {
             const value = commonData[field.id] || '';
             let inputHtml = `<div>
@@ -347,7 +366,7 @@
             return inputHtml + `</div>`;
         }).join('');
 
-        const allVisibleFields = allFields.filter(f => !hiddenFields.includes(f.id));
+        const allVisibleFields = sortFields(allFields.filter(f => !hiddenFields.includes(f.id)));
         itemsContainer.innerHTML = items.map((itemData, index) => {
             const itemFieldsHtml = allVisibleFields.map(field => {
                 const isPinned = pinnedFields.includes(field.id);
@@ -569,10 +588,25 @@
         const header = `<tr><td style="${TD_L}">${template.title}</td>${items.map((_, i) => `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i+1}</td>`).join('')}</tr>`;
 
         const allVisibleFields = template.fields.filter(field => !hiddenFields.includes(field.id));
-        const fieldsToCopy = [
-            ...allVisibleFields.filter(f => pinnedFields.includes(f.id)),
-            ...allVisibleFields.filter(f => !pinnedFields.includes(f.id))
+        // 표시 순서 정렬(공통/개별 구분 없이)
+        const FIELD_ORDER = [
+            'itemName','service','course','license','tripObjective',
+            'purpose','spec','relatedTask',
+            'vendor',
+            'qty','seats','unitPrice','amount',
+            'date','periodFrom','periodTo',
+            'isRecurring','recurringPeriod','recurringDate',
+            'paymentMethod','account',
+            'origin','destination','place','attendees','provider','manufacturer',
+            'ipMgmtNo','invoiceNo','proof',
+            'user','paymentTerms','note'
         ];
+        const orderIndex = (id) => {
+            const i = FIELD_ORDER.indexOf(id);
+            return i === -1 ? 1000 + template.fields.findIndex(f => f.id === id) : i;
+        };
+        const sortFields = (arr) => arr.slice().sort((a, b) => orderIndex(a.id) - orderIndex(b.id));
+        const fieldsToCopy = sortFields(allVisibleFields);
 
         const bodyRows = fieldsToCopy.map(field => {
             return `<tr><td style="${TD_L}">${field.label}</td>${items.map(item => {
