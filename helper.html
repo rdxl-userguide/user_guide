@@ -894,7 +894,7 @@
 
     <div class="footer-notice">
         <p>
-            위하고 폼 생성기 베타 테스트 (v4.0-ai 적용)<br>
+            위하고 폼 생성기 베타 테스트 (v4-ai 적용)<br>
             거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
             <b>FOR RADEXEL INC. USE ONLY</b>
         </p>
@@ -927,11 +927,11 @@
 
 
     <script>
-        // --- (v3.8) AI 학습용 과거 데이터 (CSV 기반 내장) ---
+        // --- (v4.1) AI 학습용 과거 데이터 (CSV 기반 내장) ---
         const historicalDB = [
             { category: "하드웨어 제작", vendor: "경기FA", itemName: "하드웨어_머시닝센터 제작 건", purpose: "하드웨어_머시닝센터 제작", account: "기업은행 471-036753-01-026", paymentMethod: "이체(KARA)" },
             { category: "하드웨어 제작", vendor: "121-87-02591", itemName: "Blade_로봇부_하드웨어_알루미늄용접물 제작 건", purpose: "Blade_로봇부_하드웨어_알루미늄용접물 제작", account: "기업은행 920-049581-04-019", paymentMethod: "이체(운영비)" },
-            { category: "자문료", vendor: "서울아산병원 박기홍 박사", itemName: "레퍼런스 빔 데이터에 대한 dicom 분석 용역자문 실시", purpose: "아산병원 빔데이터 최신 알고리즘에 대한 MC simulation 분석 실시", account: "신한은행 / 254-910471-70707 / 예금주 : 박기홍", paymentMethod: "연구비계좌이체 (데이터3차)" },
+            { category: "자문료", vendor: "서울아산병원 박기홍 박사", itemName: "레퍼런스 빔 데이터에 대한 dicom 분석 용역자문 실시", purpose: "아산병원 빔데이터 최신 알고리즘에 대한 MC simulation 분석 실시", account: "신한은행 / 254-910471-70707 / 예금주 : 박기홍", paymentMethod: "이체(데이터3차)" },
             { category: "수리", vendor: "컴마스터", itemName: "업무용 데스크탑 수리", purpose: "업무 중 장비를 이동·정리하는 과정에서 업무용 데스크탑에 물이 유입되어 고장이 발생해 수리 필요", account: "농협은행 / 517013-51-021555 / 예금주 : 임태환", note: "세금계산서 발행 불가능하므로, 사업자 현금영수증으로 대체" },
             { category: "부품구매", vendor: "동아MCT", itemName: "자동형head mag용 하드웨어 제작 건", purpose: "자동형 head mag 하드웨어 제작", account: "IM뱅크 156-08-010722-1 (예금주:동아MCT)", paymentMethod: "계좌이체" },
             { category: "부품구매", vendor: "이구스", itemName: "자동형 head mag용 레일 구매 건", purpose: "자동형 head mag구동부 레일 2차 장착", account: "하나은행 404-890002-31004 (예금주:한국이구스)" },
@@ -940,40 +940,40 @@
             { category: "인증시험", vendor: "넴코코리아", itemName: "EMC Lab Shieldroom 입회 시험(추가 시험)", purpose: "전자파 적합성 시험 중 Shieldroom 시험 추가 진행", account: "우리은행 / 398-092798-13-101 / 예금주 : 주식회사넴코코리아" },
             { category: "시험비용", vendor: "스탠다드랩", itemName: "Non-GLP 세포독성 테스트", purpose: "MPRT-BA 세포독성 시험 불합격으로 인한 non-GLP 테스트 진행", account: "하나은행 / 476-910028-45704 / 예금주 : 주식회사 스탠다드랩" },
             { category: "특허", vendor: "특허법인 비엘티", itemName: "BPP2021-0030AUD1 등록료 송금", purpose: "호주특허 등록료 송금", account: "우리은행 / 1005303954125 / 예금주: 특허법인 비엘티" },
-            { category: "교육", vendor: "인프런", itemName: "김영한의 실전자바 - 기본편", purpose: "객체지향에 대한 이해 필요 코드 재사용성, 확장성, 모듈화, 추상화, 유지보수 등을 위한 프로그래밍 필요", paymentMethod: "개인 법인카드" },
+            { category: "교육", vendor: "인프런", itemName: "김영한의 실전자바 - 기본편", purpose: "객체지향에 대한 이해 필요 코드 재사용성, 확장성, 모듈화, 추상화, 유지보수 등을 위한 프로그래밍 필요", paymentMethod: "개인법인카드" },
             { category: "교육", vendor: "(주) 가우스텍", itemName: "오페라 영구자석 해석 관련 교육", purpose: "MPRT-HM 및 MPRT-CM에 필요한 영구자석 설계 및 해석을 위한 교육", account: "신한은행 / 140-007-088210 / 예금주 : (주) 가우스텍" }
         ];
 
         const vendors = {
-            '가우스텍': { account: '신한은행 / 140-007-088210 / 예금주: (주)가우스텍' },
-            '건우산업': { account: 'IBK기업은행 / 523-041750-01-011 / 예금주: (주)건우산업' },
-            '더스탠다드': { account: '하나은행 / 476-910027-41304 / 예금주: (주)더스탠다드' },
+            '가우스텍 (129-81-92585)': { account: '신한은행 / 140-007-088210 / 예금주: (주)가우스텍' },
+            '건우산업 (816-88-00039)': { account: 'IBK기업은행 / 523-041750-01-011 / 예금주: (주)건우산업' },
+            '더스탠다드 (128-86-17026)': { account: '하나은행 / 476-910027-41304 / 예금주: (주)더스탠다드' },
             '매니아서플라이': { account: '국민은행 / 92030101750467 / 예금주: 매니아서플라이' },
             '메트로실리콘': { account: '국민은행 / 465701-04-054612 / 예금주: 메트로실리콘' },
-            '메트로테크안양공장': { account: 'IBK기업은행 / 415-022977-01-016 / 예금주: (주)메트로테크안양공장' },
+            '메트로테크안양공장 (123-85-29627)': { account: 'IBK기업은행 / 415-022977-01-016 / 예금주: (주)메트로테크안양공장' },
             '모터114': { account: 'IBK기업은행 / 13703900504018 / 예금주: (주)모터114' },
-            '미림씨스콘': { account: 'IBK기업은행 / 165-057893-04-011 / 예금주: (주)미림씨스콘' },
+            '미림씨스콘 (220-81-41768)': { account: 'IBK기업은행 / 165-057893-04-011 / 예금주: (주)미림씨스콘' },
             '반도NCT레이저': { account: 'IBK기업은행 / 20702171901013 / 예금주: 반도NCT레이저' },
             '변호사 이우진 법률사무소': { account: '국민은행 / 46570104055862 / 예금주: 변호사 이우진 법률사무소' },
             '브이이엔지': { account: '중소기업은행 / 48702598204038 / 예금주: 브이이엔지' },
-            '서정테크': { account: 'IBK기업은행 / 558-036762-04-029 / 예금주: 이승현 서정테크' },
+            '서정테크 (510-51-06712)': { account: 'IBK기업은행 / 558-036762-04-029 / 예금주: 이승현 서정테크' },
             '셀파스': { account: '국민은행 / 60240104074648 / 예금주: 셀파스' },
-            '스탠다드랩': { account: '하나은행 / 476-910028-45704 / 예금주: 주식회사 스탠다드랩' },
+            '스탠다드랩 (253-86-03401)': { account: '하나은행 / 476-910028-45704 / 예금주: 주식회사 스탠다드랩' },
             '아이서보': { account: 'IBK기업은행 / 18515007601016 / 예금주: 아이서보' },
             '용산센트럴파크 단지 관리단': { account: '우리은행 / 1005804073595 / 예금주: 용산센트럴파크 단지 관리단' },
             '인아오리엔탈모터': { account: '신한은행 / 100030231529 / 예금주: 인아오리엔탈모터(주)' },
             '청소대장부': { account: '기업은행 / 00196758104019 / 예금주: 청소대장부' },
-            '카본메이크': { account: 'IBK기업은행 / 191-096121-01-011 / 예금주: 주식회사카본메이크' },
+            '카본메이크 (411-81-75485)': { account: 'IBK기업은행 / 191-096121-01-011 / 예금주: 주식회사카본메이크' },
             '컴퓨존': { account: '우리은행 / 1005101312721 / 예금주: (주)컴퓨존' },
-            '케이비하드웨어부산영업소': { account: '국민은행 / 675001-04-280809 / 예금주: (주)케이비하드웨어부산영업소' },
-            '케이제드랩': { account: '하나은행 / 133-910083-18204 / 예금주: 주식회사 케이제드랩' },
+            '케이비하드웨어부산영업소 (274-87-01450)': { account: '국민은행 / 675001-04-280809 / 예금주: (주)케이비하드웨어부산영업소' },
+            '케이제드랩 (569-88-01961)': { account: '하나은행 / 133-910083-18204 / 예금주: 주식회사 케이제드랩' },
             '코레이즈홀딩스': { account: 'KEB하나은행 / 37591003038404 / 예금주: 주식회사 코레이즈홀딩스' },
-            '특허법인 비엘티': { account: '우리은행 / 1005303954125 / 예금주: 특허법인 비엘티' },
+            '특허법인 비엘티 (752-86-01744)': { account: '우리은행 / 1005303954125 / 예금주: 특허법인 비엘티' },
             '하나기획': { account: '하나은행 / 66791000864104 / 예금주: (주)하나기획' },
             '한국렌탈': { account: '산업은행 / 02203006736311 / 예금주: 한국렌탈' },
-            '한국플랜테크': { account: 'IBK기업은행 / 378-140954-01-016 / 예금주: 한국플랜테크' },
-            '한울이엔지': { account: 'IBK기업은행 / 955-018919-01-012 / 예금주: 주식회사 한울이엔지' },
-            '현대실리콘': { account: '국민은행 / 253-25-0013-096 / 예금주: (주)현대실리콘' },
+            '한국플랜테크 (550-88-00274)': { account: 'IBK기업은행 / 378-140954-01-016 / 예금주: 한국플랜테크' },
+            '한울이엔지 (566-87-01795)': { account: 'IBK기업은행 / 955-018919-01-012 / 예금주: 주식회사 한울이엔지' },
+            '현대실리콘 (136-81-31247)': { account: '국민은행 / 253-25-0013-096 / 예금주: (주)현대실리콘' },
             '이구스': { account: '하나은행 404-890002-31004 (예금주:한국이구스)' },
             '넴코코리아': { account: '우리은행 / 398-092798-13-101 / 예금주 : 주식회사넴코코리아' },
             '셀라': { account: '신한은행 / 110-295-060151 / 예금주 : 김나영' },
@@ -981,34 +981,41 @@
             '서울아산병원 박기홍 박사': { account: '신한은행 / 254-910471-70707 / 예금주 : 박기홍' }
         };
 
+        // [수정] 이미지에 맞춰 결제수단 옵션 업데이트
         const paymentMethodOptions = [
-            '운영계좌 이체', '연구계좌 이체(데이터활용)', '연구계좌 이체(KARA)', '개인법인카드',
-            'SW카드', '다과카드', '사무잡비카드', '연구비계좌이체'
+            '이체(운영비)', '이체(데이터3차)', '이체(KARA)', '개인법인카드', 'SW카드', '다과카드', '사무잡비카드'
         ];
 
+        // [수정] 공통 필드: 거래처 라벨 변경
         const BASE_COMMON_FIELDS = [
-            { id: 'vendor', label: '거래처/구입처/용역업체', example: '네이버페이, 지오비전 등' },
+            { id: 'vendor', label: '거래처명 및 사업자등록번호', example: '주식회사 가나다 / 123-45-67890' },
             { id: 'paymentMethod', label: '결제수단', type: 'select', options: paymentMethodOptions },
-            { id: 'account', label: '입금계좌', example: '국민은행 / 465701-04-054612 / 예금주 : OOO' },
-            { id: 'purpose', label: '지출/구매/용역 목적 및 필요성', example: '구매를 요청하는 이유 · 필요성' },
+            { id: 'account', label: '거래처 계좌 정보', example: '국민은행 / 465701-04-054612 / 예금주 : OOO' },
+            { id: 'purpose', label: '구매 목적', example: '구매 목적 내용 기재' },
         ];
 
         const DEFAULT_PINNED_IDS = BASE_COMMON_FIELDS.map(f => f.id);
 
+        // [수정] 개별 필드: 관련 과제명 추가 및 라벨 업데이트
         const FIELD = {
-            itemName: { id: 'itemName', label: '품목명/지출명', example: '업무용 모니터, 시뮬레이션용 서버' },
+            itemName: { id: 'itemName', label: '품목명', example: '업무용 모니터 (제조사: 삼성전자)' },
             spec: { id: 'spec', label: '규격/설명/용역내용/지출내용', example: '간략한 세부 내용' },
             qty: { id: 'qty', label: '수량', example: '2, 4' },
-            unitPrice: { id: 'unitPrice', label: '단가(원)', example: '22,000,000 원 / 10 USD' },
+            unitPrice: { id: 'unitPrice', label: '단가(외화인 경우 통화 기재)', example: '22,000,000 원 / 10 USD' },
             amount: { id: 'amount', label: '총 금액(부가세 포함)', example: '44,000,000 원 / 40 USD' },
-            date: { id: 'date', label: '구매/지출일자', example: '2024. 6. 18.' },
-            note: { id: 'note', label: '기타사항', example: '특별 요청사항 또는 부가 정보' },
-            user: { id: 'user', label: '사용자/신청자', example: '사용할 임직원, 부서, 공용 등' },
+            date: { id: 'date', label: '구매일자', example: '2025. 11. 19.' },
+            note: { id: 'note', label: '기타사항(필요 시 작성)', example: '특별 요청사항 또는 부가 정보' },
+            user: { id: 'user', label: '사용자/사용부서', example: '사용할 임직원, 부서, 공용 등' },
             manufacturer: { id: 'manufacturer', label: '제조사', example: '한성컴퓨터, MS, 출판사 등' },
+            paymentTerms: { id: 'paymentTerms', label: '지급 조건(필요 시 작성)', example: '1) 계약금: 30% || 2) 잔금: 70%' },
+
+            // [추가] 관련 과제명 (연구비 이체 시 필수)
+            relatedTask: { id: 'relatedTask', label: '관련 과제명 (*연구비 계좌 이체 시 기재)', example: '방사선융복합산업지원 사업 지원금' },
+
+            // 기존 필드들 (다른 양식용 유지)
             isRecurring: { id: 'isRecurring', label: '정기결제 여부', example: '일시납 / 매년 / 매월 등' },
             recurringPeriod: { id: 'recurringPeriod', label: '자동 결제 기간', example: '무기한, 2023.3.14 ~ 2024.3.14' },
             recurringDate: { id: 'recurringDate', label: '자동 결제일', example: '매달 10일, 매년 3월 둘째 주 등' },
-            paymentTerms: { id: 'paymentTerms', label: '지급 조건', example: '1) 계약금:계약 후 7일 이내 총 금액의 30 % 지급 || 2) 완료금:결과물 승인 시 잔여 70 % 지급' },
             place: { id: 'place', label: '장소/교육장소', example: '온라인, 라덱셀 회의실 등' },
             attendees: { id: 'attendees', label: '참석자/교육대상', example: '대상 직원, 부서, 전 임직원 등' },
             service: { id: 'service', label: '용역명', example: '소프트웨어 개발 외주 용역' },
@@ -1016,7 +1023,6 @@
             periodTo: { id: 'periodTo', label: '기간(종료)', example: '2024. 7. 18.' },
             course: { id: 'course', label: '교육명칭', example: '데이터분석 실무 강의' },
             provider: { id: 'provider', label: '강사/교육기관', example: '홍길동/패스트캠퍼스' },
-            relatedTask: { id: 'relatedTask', label: '관련 업무', example: 'OOO 프로젝트' },
             license: { id: 'license', label: '제품/라이선스명', example: '미로보드 비즈니스 플랜' },
             seats: { id: 'seats', label: '라이선스 수', example: '2, 4' },
             origin: { id: 'origin', label: '출발지', example: '회사' },
@@ -1033,8 +1039,11 @@
 
         const T = (title, ...fields) => ({ title, fields: [...BASE_COMMON_FIELDS, ...Object.values(FIELD).filter(f => fields.includes(f))] });
 
+        // [수정] 일반 지출품의서: 새 양식에 맞춰 relatedTask 추가하고 정기결제 관련 제외
         const formTemplates = {
-            'general_expense': T('지출품의서 - 일반', FIELD.itemName, FIELD.unitPrice, FIELD.qty, FIELD.manufacturer, FIELD.amount, FIELD.isRecurring, FIELD.recurringPeriod, FIELD.recurringDate, FIELD.date, FIELD.paymentTerms, FIELD.user, FIELD.note),
+            'general_expense': T('지출품의서 - 일반', FIELD.itemName, FIELD.unitPrice, FIELD.qty, FIELD.amount, FIELD.date, FIELD.paymentTerms, FIELD.user, FIELD.relatedTask, FIELD.note),
+
+            // 기존 템플릿 유지
             'meeting_expense': T('지출품의서 - 사내 사외 회의비', FIELD.itemName, FIELD.amount, FIELD.user, FIELD.note),
             'outsourcing_expense': T('지출품의서 - 외주용역', FIELD.service, FIELD.periodFrom, FIELD.periodTo, FIELD.spec, FIELD.user, FIELD.amount, FIELD.isRecurring, FIELD.recurringPeriod, FIELD.recurringDate, FIELD.paymentTerms, FIELD.note),
             'education_expense': T('지출품의서 - 교육비', FIELD.course, FIELD.provider, FIELD.periodFrom, FIELD.periodTo, FIELD.place, FIELD.attendees, FIELD.amount, FIELD.relatedTask, FIELD.note),
@@ -1099,18 +1108,30 @@
             const template = formTemplates[currentFormType];
             const allFields = template.fields;
 
+            // [수정] 이미지 순서와 동일하게 정렬 (품목 -> 단가 -> 수량 -> 금액 -> 날짜 ...)
             const FIELD_ORDER = [
-                'itemName', 'service', 'course', 'license', 'tripObjective',
-                'purpose', 'spec', 'relatedTask',
+                'itemName',
+                'unitPrice',
+                'qty',
+                'amount',
+                'date',
+                'paymentTerms',
+                'user',
+                'paymentMethod',
                 'vendor',
-                'qty', 'seats', 'unitPrice', 'amount',
-                'date', 'periodFrom', 'periodTo',
+                'account',
+                'relatedTask', // [추가] 관련 과제명 위치
+                'purpose',
+                'note',
+
+                // 기타 필드들 (다른 양식용)
+                'service', 'course', 'license', 'tripObjective',
+                'spec', 'periodFrom', 'periodTo',
                 'isRecurring', 'recurringPeriod', 'recurringDate',
-                'paymentMethod', 'account',
                 'origin', 'destination', 'place', 'attendees', 'provider', 'manufacturer',
-                'ipMgmtNo', 'invoiceNo', 'proof',
-                'user', 'paymentTerms', 'note'
+                'ipMgmtNo', 'invoiceNo', 'proof', 'seats'
             ];
+
             const orderIndex = (id) => {
                 const i = FIELD_ORDER.indexOf(id);
                 return i === -1 ? 1000 + allFields.findIndex(f => f.id === id) : i;
@@ -1121,13 +1142,13 @@
             commonInputsContainer.innerHTML = visiblePinnedFields.map(field => {
                 const value = commonData[field.id] || '';
                 let inputHtml = `<div>
-                    <div class="label-wrapper">
-                        <label for="common_${field.id}">${field.label}</label>
-                        <div class="label-icons">
-                            <button class="icon-btn pin-btn" data-pin-action="unpin" data-field-id="${field.id}" title="개별 항목으로 변경">🔓</button>
-                            <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>
-                        </div>
-                    </div>`;
+                        <div class="label-wrapper">
+                            <label for="common_${field.id}">${field.label}</label>
+                            <div class="label-icons">
+                                <button class="icon-btn pin-btn" data-pin-action="unpin" data-field-id="${field.id}" title="개별 항목으로 변경">🔓</button>
+                                <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>
+                            </div>
+                        </div>`;
 
                 if (field.id === 'vendor') {
                     const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
@@ -1151,13 +1172,13 @@
                     let iconsHtml = isPinned
                         ? `<button class="icon-btn lock-icon" title="공통 항목입니다. 위에서 일괄 적용할 수 있습니다.">🔒</button>`
                         : `<button class="icon-btn pin-btn" data-pin-action="pin" data-field-id="${field.id}" title="공통 항목으로 고정">📌</button>
-                            <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>`;
+                                <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>`;
 
                     let fieldHtml = `<div>
-                        <div class="label-wrapper">
-                            <label for="${uniqueId}">${field.label}</label>
-                            <div class="label-icons">${iconsHtml}</div>
-                        </div>`;
+                            <div class="label-wrapper">
+                                <label for="${uniqueId}">${field.label}</label>
+                                <div class="label-icons">${iconsHtml}</div>
+                            </div>`;
 
                     if (field.type === 'select') {
                         if (field.id === 'paymentMethod') {
@@ -1174,10 +1195,10 @@
                 }).join('');
 
                 return `
-                    <div class="item-card" data-index="${index}">
-                        <div class="item-header"><h3>항목 ${index + 1}</h3>${items.length > 1 ? '<button class="remove-item-btn" tabindex="-1" title="항목 삭제">×</button>' : ''}</div>
-                        <div class="item-fields-container">${itemFieldsHtml}</div>
-                    </div>`;
+                        <div class="item-card" data-index="${index}">
+                            <div class="item-header"><h3>항목 ${index + 1}</h3>${items.length > 1 ? '<button class="remove-item-btn" tabindex="-1" title="항목 삭제">×</button>' : ''}</div>
+                            <div class="item-fields-container">${itemFieldsHtml}</div>
+                        </div>`;
             }).join('');
 
             const hiddenCommonFields = allFields.filter(f => hiddenFields.includes(f.id) && pinnedFields.includes(f.id));
@@ -1190,7 +1211,7 @@
             saveState();
         }
 
-        // --- [추가] AI 고급 설정 UI 제어 함수 ---
+        // --- AI 고급 설정 UI 제어 함수 ---
         function toggleSplitOptions() {
             const mode = document.querySelector('input[name="aiMode"]:checked').value;
             const detailOptions = document.getElementById('split-detail-options');
@@ -1206,8 +1227,8 @@
             if (hiddenFields.length > 0) {
                 sectionEl.style.display = 'block';
                 sectionEl.innerHTML = `
-                    <h4>[+] 복원할 항목을 클릭하세요</h4>
-                    <div class="restore-list">${hiddenFields.map(f => `<button class="restore-btn" data-field-id="${f.id}">${f.label}</button>`).join('')}</div>`;
+                        <h4>[+] 복원할 항목을 클릭하세요</h4>
+                        <div class="restore-list">${hiddenFields.map(f => `<button class="restore-btn" data-field-id="${f.id}">${f.label}</button>`).join('')}</div>`;
             } else {
                 sectionEl.style.display = 'none';
             }
@@ -1391,17 +1412,16 @@
             const header = `<tr><td style="${TD_L}">${template.title}</td>${items.map((_, i) => `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i + 1}</td>`).join('')}</tr>`;
 
             const allVisibleFields = template.fields.filter(field => !hiddenFields.includes(field.id));
+
+            // [수정] 복사 시에도 이미지 순서와 동일하게 정렬
             const FIELD_ORDER = [
-                'itemName', 'service', 'course', 'license', 'tripObjective',
-                'purpose', 'spec', 'relatedTask',
-                'vendor',
-                'qty', 'seats', 'unitPrice', 'amount',
-                'date', 'periodFrom', 'periodTo',
+                'itemName', 'unitPrice', 'qty', 'amount', 'date', 'paymentTerms', 'user',
+                'paymentMethod', 'vendor', 'account', 'relatedTask', 'purpose', 'note',
+                'service', 'course', 'license', 'tripObjective',
+                'spec', 'periodFrom', 'periodTo',
                 'isRecurring', 'recurringPeriod', 'recurringDate',
-                'paymentMethod', 'account',
                 'origin', 'destination', 'place', 'attendees', 'provider', 'manufacturer',
-                'ipMgmtNo', 'invoiceNo', 'proof',
-                'user', 'paymentTerms', 'note'
+                'ipMgmtNo', 'invoiceNo', 'proof', 'seats'
             ];
 
             const orderIndex = (id) => {
@@ -1454,7 +1474,6 @@
         const fileInput = document.getElementById('file-input');
         const runAnalysisBtn = document.getElementById('run-analysis-btn');
         const aiLoading = document.getElementById('ai-loading');
-        // [추가] 프롬프트 입력창 감지용
         const userInstructionInput = document.getElementById('user-instruction');
 
         let GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || '';
@@ -1522,19 +1541,19 @@
             // 파일 목록 렌더링
             if (stagedFiles.length === 0) {
                 fileListBox.innerHTML = `
-                    <div style="text-align: center; color: rgba(255,255,255,0.6);">
-                        대기 중인 파일이 없습니다.
-                    </div>`;
+                        <div style="text-align: center; color: rgba(255,255,255,0.6);">
+                            대기 중인 파일이 없습니다.
+                        </div>`;
                 fileListBox.style.justifyContent = "center";
             } else {
                 const listHtml = stagedFiles.map((f, idx) => `
-                    <div class="file-item">
-                        <span>📄</span>
-                        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
-                        <span style="font-size:0.8rem; opacity:0.7;">${(f.size / 1024).toFixed(1)}KB</span>
-                        <span style="cursor:pointer;" onclick="removeStagedFile(${idx})">✖</span>
-                    </div>
-                `).join('');
+                        <div class="file-item">
+                            <span>📄</span>
+                            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</span>
+                            <span style="font-size:0.8rem; opacity:0.7;">${(f.size / 1024).toFixed(1)}KB</span>
+                            <span style="cursor:pointer;" onclick="removeStagedFile(${idx})">✖</span>
+                        </div>
+                    `).join('');
 
                 fileListBox.innerHTML = listHtml;
                 fileListBox.style.justifyContent = "flex-start";
@@ -1700,42 +1719,42 @@
                 const validPaymentMethods = paymentMethodOptions.join("', '");
 
                 const promptText = `
-                You are an expert Tax & Accounting Assistant for 'Radexel Inc.'.
-                
-                [Goal]
-                Extract data to fill out the company approval form: "${template.title}".
+                    You are an expert Tax & Accounting Assistant for 'Radexel Inc.'.
+                    
+                    [Goal]
+                    Extract data to fill out the company approval form: "${template.title}".
 
-                [USER INSTRUCTION - HIGH PRIORITY]
-                The user has provided specific instructions. Follow these above all else:
-                "${userInstruction || "No specific instructions. Proceed with standard analysis."}"
-                
-                *If the user mentions 'Operating Account' or '운영비', interpret it as '운영계좌 이체'.
-                *If the user mentions 'Research Account' or '연구비', interpret it as '연구계좌 이체'.
-                *If the user mentions 'Corporate Card', interpret it as '개인 법인카드'.
+                    [USER INSTRUCTION - HIGH PRIORITY]
+                    The user has provided specific instructions. Follow these above all else:
+                    "${userInstruction || "No specific instructions. Proceed with standard analysis."}"
+                    
+                    *If the user mentions 'Operating Account' or '운영비', interpret it as '이체(운영비)'.
+                    *If the user mentions 'Research Account' or '연구비', interpret it as '연구비계좌이체'.
+                    *If the user mentions 'Corporate Card', interpret it as '개인법인카드'.
 
-                ${splitInstruction}
+                    ${splitInstruction}
 
-                [Context: Extracted Text]
-                ${textContext}
+                    [Context: Extracted Text]
+                    ${textContext}
 
-                [Reference: Historical Data]
-                ${JSON.stringify(historicalDB)}
+                    [Reference: Historical Data]
+                    ${JSON.stringify(historicalDB)}
 
-                [Reference: Vendors]
-                [${vendorListKeys}] (Use exact names if matched)
-                
-                [Reference: Valid Payment Methods]
-                ['${validPaymentMethods}']
-                *Please try to select one of the above values for 'paymentMethod' if possible.
+                    [Reference: Vendors]
+                    [${vendorListKeys}] (Use exact names if matched)
+                    
+                    [Reference: Valid Payment Methods]
+                    ['${validPaymentMethods}']
+                    *Please try to select one of the above values for 'paymentMethod' if possible.
 
-                [Target Fields]
-                ${fieldsInfo}
+                    [Target Fields]
+                    ${fieldsInfo}
 
-                [Rules]
-                1. **Format**: JSON Only. No markdown.
-                2. **Date**: 'YYYY. MM. DD.'
-                3. **Currency**: Remove symbols.
-                `;
+                    [Rules]
+                    1. **Format**: JSON Only. No markdown.
+                    2. **Date**: 'YYYY. MM. DD.'
+                    3. **Currency**: Remove symbols.
+                    `;
 
                 const parts = [{ text: promptText }];
                 images.forEach(img => {
@@ -1809,10 +1828,11 @@
                     if (bestPm) {
                         res.paymentMethod = bestPm;
                     } else {
-                        // 특정 키워드 매핑
-                        if (pm.includes('운영')) res.paymentMethod = '운영계좌 이체';
-                        else if (pm.includes('연구')) res.paymentMethod = '연구계좌 이체';
-                        else if (pm.includes('카드')) res.paymentMethod = '개인 법인카드';
+                        // [수정] 새 옵션에 맞춘 매핑 로직
+                        if (pm.includes('운영')) res.paymentMethod = '이체(운영비)';
+                        else if (pm.includes('연구')) res.paymentMethod = '연구비계좌이체';
+                        else if (pm.includes('카드')) res.paymentMethod = '개인법인카드';
+                        else if (pm.includes('KARA')) res.paymentMethod = '이체(KARA)';
                     }
                 }
 
@@ -1898,4 +1918,3 @@
 
 </html>
 ```
-
