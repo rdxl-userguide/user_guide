@@ -1315,6 +1315,31 @@
                 const fieldId = e.target.id.replace('common_', '');
                 let value = e.target.value;
 
+                // [기존 코드]
+                // let value = e.target.value;
+
+                // ▼▼▼ [여기서부터 붙여넣기] ▼▼▼
+                // [추가] 결제수단에 따른 관련 과제명 자동 매칭
+                if (fieldId === 'paymentMethod') {
+                    let autoTaskName = '';
+                    if (value.includes('KARA')) {
+                        autoTaskName = '방사선 융복합 산업 지원사업';
+                    } else if (value.includes('데이터')) {
+                        autoTaskName = '데이터 활용 의료 건강 사업';
+                    }
+                    
+                    if (autoTaskName) {
+                        commonData['relatedTask'] = autoTaskName;
+                        // 화면 즉시 반영
+                        const taskInput = document.getElementById('common_relatedTask');
+                        if (taskInput) taskInput.value = autoTaskName;
+                    }
+                }
+                // ▲▲▲ [여기까지 붙여넣기] ▲▲▲
+
+                // [기존 코드]
+                // // [신규] 금액/단가 필드일 경우 자동 포맷팅 적용
+                
                 // [신규] 금액/단가 필드일 경우 자동 포맷팅 적용
                 if (fieldId === 'amount' || fieldId === 'unitPrice') {
                     value = formatSmartCurrency(value);
@@ -2004,6 +2029,19 @@
                     }
                 }
 
+                // [추가] AI 분석 후 결제수단에 맞춰 과제명 자동 할당
+                if (res.paymentMethod) {
+                    if (res.paymentMethod.includes('KARA')) {
+                        res.relatedTask = '방사선 융복합 산업 지원사업';
+                    } else if (res.paymentMethod.includes('데이터')) {
+                        res.relatedTask = '데이터 활용 의료 건강 사업';
+                    }
+                }
+
+
+                // [기존 코드]
+                // // 3. [신규] 금액 필드 콤마 자동 적용 (AI가 가져온 값 포맷팅)
+                // if (res.amount) res.amount = formatSmartCurrency(res.amount);
                 // 3. [신규] 금액 필드 콤마 자동 적용 (AI가 가져온 값 포맷팅)
                 if (res.amount) res.amount = formatSmartCurrency(res.amount);
                 if (res.unitPrice) res.unitPrice = formatSmartCurrency(res.unitPrice);
