@@ -7,14 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --primary-color: #5a67d8;
-            --primary-hover: #4c51bf;
+            /* [수정] 시그니처 블루 적용 (메인 컬러) */
+            --primary-color: #2C5CA3;
+            /* [수정] 호버 시 더 깊은 블루 */
+            --primary-hover: #1E447A; 
+            
             --border-color: #e2e8f0;
             --background-light: #f7fafc;
             --background-white: #ffffff;
             --text-dark: #2d3748;
             --text-light: #718096;
-            --success-color: #38a169;
+            
+            /* [수정] 시그니처 그린 적용 (성공/완료) */
+            --success-color: #20B685; 
         }
 
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -111,7 +116,8 @@
         select:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.15);
+            /* [수정] 파란색(#2C5CA3)의 투명도 조절 버전 */
+            box-shadow: 0 0 0 3px rgba(44, 92, 163, 0.15);
         }
 
         input::placeholder {
@@ -299,7 +305,8 @@
 
         .highlight {
             transition: box-shadow 0.2s;
-            box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.4);
+            /* [수정] 하이라이트는 초록색(#20B685)을 사용하여 '적용됨/성공' 의미 부여 */
+            box-shadow: 0 0 0 3px rgba(32, 182, 133, 0.5);
         }
 
         .header-controls {
@@ -323,7 +330,8 @@
 
         /* --- AI Section 스타일 (Step 2 - 좌우 분할 레이아웃) --- */
         .ai-section {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            /* [수정] 회사 시그니처 컬러 그라데이션 (블루 -> 그린) */
+            background: linear-gradient(135deg, #2C5CA3 0%, #20B685 100%);
             border-radius: 1rem;
             padding: 2rem;
             margin-bottom: 2rem;
@@ -337,6 +345,8 @@
         .ai-section.drag-over {
             transform: scale(1.005);
             box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+            /* 드래그 시 조금 더 밝은 톤으로 변경 */
+            background: linear-gradient(135deg, #386CB8 0%, #2BCFA0 100%);
         }
 
         .ai-header {
@@ -409,7 +419,7 @@
             gap: 1rem;
         }
 
-        /* 대기 중인 파일 박스 (어두운 보라색 배경) */
+        /* 대기 중인 파일 박스 (어두운 배경) */
         #file-list-box {
             flex: 1;
             background: rgba(0, 0, 0, 0.25);
@@ -467,7 +477,8 @@
         /* 하단 분석 버튼 */
         #run-analysis-btn {
             width: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
+            /* [수정] 버튼 텍스트를 메인 블루 컬러로 */
             color: var(--primary-color);
             font-weight: 800;
             border: none;
@@ -483,6 +494,8 @@
             background: white;
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            /* [수정] 호버 시 텍스트는 초록색으로 포인트 */
+            color: var(--success-color);
         }
 
         #run-analysis-btn:disabled {
@@ -609,14 +622,7 @@
         /* 3. AI 섹션: 드래그 앤 드롭 시각화 강화 */
         .ai-section {
             border: 2px dashed rgba(255, 255, 255, 0.4);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .ai-section.drag-over {
-            background: linear-gradient(135deg, #5a6fd6 0%, #684292 100%);
-            border-color: #fff;
-            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
-            transform: scale(1.01);
+            /* 이미 위에서 그라데이션 정의됨 */
         }
 
         /* 4. [New] 토스트 알림 (Toast Notification) */
@@ -625,7 +631,7 @@
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
-            background-color: #2d3748;
+            background-color: var(--text-dark);
             color: white;
             padding: 1rem 2rem;
             border-radius: 50px;
@@ -732,8 +738,8 @@
             border: none !important;
             text-align: center;
             font-weight: bold;
-            color: #5a67d8;
-            /* 입력 숫자는 파란색 유지 (흰 배경 위라 잘 보임) */
+            /* [수정] 입력된 숫자는 메인 블루 컬러로 */
+            color: var(--primary-color); 
             background: white;
             height: 30px !important;
             margin: 0 0.5rem;
@@ -2137,3 +2143,4 @@
 
 </html>
 ```
+
