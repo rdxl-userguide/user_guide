@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (v3.3)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (v4.1)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -801,7 +801,7 @@
 
                         <div class="instruction-box">
                             <span style="font-size: 1.2rem;">💡</span>
-                            <input type="text" id="user-instruction" placeholder="AI 지시사항 (예: 운영계좌에서 이체필요)">
+                            <input type="text" id="user-instruction" placeholder="AI 지시사항 (예: 운영계좌에서 이체할게. 부가세는 10%임.)">
                         </div>
                     </div>
                 </div>
@@ -1149,10 +1149,29 @@
                                 <button class="icon-btn hide-btn" tabindex="-1" data-field-id="${field.id}" title="항목 숨기기">×</button>
                             </div>
                         </div>`;
-
                 if (field.id === 'vendor') {
-                    const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
-                    inputHtml += `<select id="common_${field.id}"><option value="">-- 직접 입력 --</option>${optionsHtml}</select>`;
+                    // 값이 존재하지만 미리 정의된 거래처 목록(vendors)에 없는 경우 -> 직접 입력 모드(Input)
+                    const isCustomVendor = value && !vendors[value];
+
+                    if (isCustomVendor) {
+                        inputHtml += `
+                            <div style="display:flex; gap:0.5rem; align-items: center;">
+                                <input type="text" id="common_${field.id}" value="${value}" placeholder="거래처명 직접 입력" style="flex:1;">
+                                <button class="button button-secondary vendor-toggle-btn" data-action="to-list" style="padding:0.75rem; font-size:0.8rem; white-space:nowrap;">
+                                    📋 목록 선택
+                                </button>
+                            </div>`;
+                    } else {
+                        // 목록에 있거나 값이 없는 경우 -> 선택 모드(Select)
+                        const optionsHtml = Object.keys(vendors).map(k => `<option value="${k}" ${value === k ? 'selected' : ''}>${k}</option>`).join('');
+                        inputHtml += `
+                            <select id="common_${field.id}">
+                                <option value="">-- 선택하세요 --</option>
+                                ${optionsHtml}
+                                <option value="__DIRECT__" style="color: var(--primary-color); font-weight:bold;">+ 직접 입력 (신규 거래처)</option>
+                            </select>`;
+                    }
+
                 } else if (field.type === 'select') {
                     const optionsHtml = field.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('');
                     inputHtml += `<select id="common_${field.id}"><option value="">-- 선택 --</option>${optionsHtml}</select>`;
@@ -1302,6 +1321,67 @@
                 saveState();
             }
         });
+
+
+        // [추가] 거래처 모드 전환 (목록 ↔ 직접입력) 처리 리스너
+        commonInputsContainer.addEventListener('click', (e) => {
+            // 기존 핀/숨김 버튼 로직 유지 (상단에 있음)
+            handleIconClick(e);
+            handlePinClick(e);
+
+            // [신규] "목록 선택" 버튼 클릭 시
+            if (e.target.classList.contains('vendor-toggle-btn')) {
+                const action = e.target.dataset.action;
+                if (action === 'to-list') {
+                    commonData['vendor'] = ''; // 값을 비워서 Select 모드로 복귀
+                    saveState();
+                    render();
+                }
+            }
+        });
+
+        // [수정] 기존 input 리스너에 "직접 입력" 선택 감지 로직 추가
+        commonInputsContainer.addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                const fieldId = e.target.id.replace('common_', '');
+                let value = e.target.value;
+
+                // [신규] 거래처 Select에서 "직접 입력"을 선택한 경우
+                if (fieldId === 'vendor' && value === '__DIRECT__') {
+                    // 임시 텍스트를 넣어 Input 모드로 강제 전환 (다음 렌더링 시 적용됨)
+                    commonData['vendor'] = " "; // 공백을 넣어 값이 있는 것으로 인식시킴
+                    saveState();
+                    render();
+
+                    // 렌더링 후 포커스 이동 및 값 초기화
+                    setTimeout(() => {
+                        const inputEl = document.getElementById('common_vendor');
+                        if (inputEl) {
+                            inputEl.value = ""; // 공백 제거
+                            inputEl.focus();
+                        }
+                    }, 50);
+                    return;
+                }
+
+                commonData[fieldId] = value;
+
+                // 거래처 선택 시 계좌 자동 입력 (직접 입력이 아닌 경우에만)
+                if (fieldId === 'vendor' && vendors[value]) {
+                    commonData['account'] = vendors[value].account || '';
+                    const accountInput = document.getElementById('common_account');
+                    if (accountInput) accountInput.value = commonData['account'];
+                }
+
+                saveState();
+            }
+        });
+
+
+
+
+
+
 
         applyCommonBtn.addEventListener('click', () => {
             items.forEach(item => {
@@ -1804,31 +1884,36 @@
 
             // [수정] 데이터 정제 로직 (Vendor & PaymentMethod Fuzzy Match)
             const refineItem = (res) => {
-                // 1. Vendor Matching
+                // 1. Vendor Matching (기존 거래처 매칭 시도)
                 if (res.vendor) {
                     const aiVendor = res.vendor.replace(/\(주\)|주식회사|\s/g, '');
                     const bestMatch = Object.keys(vendors).find(k => {
                         const keyNorm = k.replace(/\(주\)|주식회사|\s/g, '');
                         return keyNorm.includes(aiVendor) || aiVendor.includes(keyNorm);
                     });
+
                     if (bestMatch) {
+                        // 매칭 성공: 기존 리스트의 정확한 명칭으로 변경
                         res.vendor = bestMatch;
+                        // 계좌정보가 비어있다면 기존 리스트 정보로 자동 채움
                         if (!res.account && vendors[bestMatch].account) {
                             res.account = vendors[bestMatch].account;
                         }
+                    } else {
+                        // [추가] 매칭 실패 (신규 거래처): AI가 찾은 텍스트 그대로 유지
+                        // 계좌번호(res.account)도 AI가 찾은 값이 있다면 그대로 둡니다.
+                        console.log(`신규 거래처 감지: ${res.vendor}`);
                     }
                 }
 
-                // 2. Payment Method Matching (AI가 '운영계좌' 등으로 짧게 답했을 때 보정)
+                // 2. Payment Method Matching (기존 로직 유지)
                 if (res.paymentMethod) {
                     const pm = res.paymentMethod;
-                    // 드롭다운 옵션 중 포함되는 단어가 있는지 확인
                     const bestPm = paymentMethodOptions.find(opt => opt.includes(pm) || pm.includes(opt));
 
                     if (bestPm) {
                         res.paymentMethod = bestPm;
                     } else {
-                        // [수정] 새 옵션에 맞춘 매핑 로직
                         if (pm.includes('운영')) res.paymentMethod = '이체(운영비)';
                         else if (pm.includes('연구')) res.paymentMethod = '연구비계좌이체';
                         else if (pm.includes('카드')) res.paymentMethod = '개인법인카드';
@@ -1838,6 +1923,7 @@
 
                 return res;
             };
+
 
             // 첫 번째 결과 정제 (공통 필드용)
             firstResult = refineItem(firstResult);
