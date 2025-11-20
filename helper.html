@@ -1309,18 +1309,45 @@
             }
         });
 
+        // [수정] 공통 정보 입력 리스너 (거래처 모드 + 금액 포맷팅 추가)
         commonInputsContainer.addEventListener('input', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 const fieldId = e.target.id.replace('common_', '');
-                commonData[fieldId] = e.target.value;
-                if (fieldId === 'vendor' && vendors[e.target.value]) {
-                    commonData['account'] = vendors[e.target.value].account || '';
+                let value = e.target.value;
+
+                // [신규] 금액/단가 필드일 경우 자동 포맷팅 적용
+                if (fieldId === 'amount' || fieldId === 'unitPrice') {
+                    value = formatSmartCurrency(value);
+                    e.target.value = value; // 화면에 콤마 반영
+                }
+
+                // [신규] 거래처 Select에서 "직접 입력"을 선택한 경우
+                if (fieldId === 'vendor' && value === '__DIRECT__') {
+                    commonData['vendor'] = " ";
+                    saveState();
+                    render();
+                    setTimeout(() => {
+                        const inputEl = document.getElementById('common_vendor');
+                        if (inputEl) {
+                            inputEl.value = "";
+                            inputEl.focus();
+                        }
+                    }, 50);
+                    return;
+                }
+
+                commonData[fieldId] = value;
+
+                if (fieldId === 'vendor' && vendors[value]) {
+                    commonData['account'] = vendors[value].account || '';
                     const accountInput = document.getElementById('common_account');
                     if (accountInput) accountInput.value = commonData['account'];
                 }
+
                 saveState();
             }
         });
+
 
 
         // [추가] 거래처 모드 전환 (목록 ↔ 직접입력) 처리 리스너
@@ -1423,11 +1450,20 @@
             }
         });
 
+        // [수정] 세부 항목 입력 리스너 (금액 포맷팅 추가)
         itemsContainer.addEventListener('input', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 const index = e.target.closest('.item-card').dataset.index;
                 const fieldId = e.target.id.split('_')[0];
-                items[index][fieldId] = e.target.value;
+                let value = e.target.value;
+
+                // [신규] 금액/단가 필드일 경우 자동 포맷팅 적용
+                if (fieldId === 'amount' || fieldId === 'unitPrice') {
+                    value = formatSmartCurrency(value);
+                    e.target.value = value; // 화면에 콤마 반영
+                }
+
+                items[index][fieldId] = value;
                 saveState();
             }
         });
@@ -1937,35 +1973,27 @@
                 firstResult = result;
             }
 
-            // [수정] 데이터 정제 로직 (Vendor & PaymentMethod Fuzzy Match)
+            // [수정] 데이터 정제 로직 (Vendor, Payment, Currency Formatting)
             const refineItem = (res) => {
-                // 1. Vendor Matching (기존 거래처 매칭 시도)
+                // 1. Vendor Matching
                 if (res.vendor) {
                     const aiVendor = res.vendor.replace(/\(주\)|주식회사|\s/g, '');
                     const bestMatch = Object.keys(vendors).find(k => {
                         const keyNorm = k.replace(/\(주\)|주식회사|\s/g, '');
                         return keyNorm.includes(aiVendor) || aiVendor.includes(keyNorm);
                     });
-
                     if (bestMatch) {
-                        // 매칭 성공: 기존 리스트의 정확한 명칭으로 변경
                         res.vendor = bestMatch;
-                        // 계좌정보가 비어있다면 기존 리스트 정보로 자동 채움
                         if (!res.account && vendors[bestMatch].account) {
                             res.account = vendors[bestMatch].account;
                         }
-                    } else {
-                        // [추가] 매칭 실패 (신규 거래처): AI가 찾은 텍스트 그대로 유지
-                        // 계좌번호(res.account)도 AI가 찾은 값이 있다면 그대로 둡니다.
-                        console.log(`신규 거래처 감지: ${res.vendor}`);
                     }
                 }
 
-                // 2. Payment Method Matching (기존 로직 유지)
+                // 2. Payment Method Matching
                 if (res.paymentMethod) {
                     const pm = res.paymentMethod;
                     const bestPm = paymentMethodOptions.find(opt => opt.includes(pm) || pm.includes(opt));
-
                     if (bestPm) {
                         res.paymentMethod = bestPm;
                     } else {
@@ -1976,25 +2004,25 @@
                     }
                 }
 
+                // 3. [신규] 금액 필드 콤마 자동 적용 (AI가 가져온 값 포맷팅)
+                if (res.amount) res.amount = formatSmartCurrency(res.amount);
+                if (res.unitPrice) res.unitPrice = formatSmartCurrency(res.unitPrice);
+
                 return res;
             };
 
-
-            // 첫 번째 결과 정제 (공통 필드용)
+            // 첫 번째 결과 정제
             firstResult = refineItem(firstResult);
 
-            // 공통 필드(Pinned) 업데이트
             pinnedFields.forEach(fieldId => {
                 if (firstResult[fieldId]) {
                     commonData[fieldId] = firstResult[fieldId];
-                    // 벤더가 업데이트되면 계좌도 같이 업데이트 (AI가 계좌를 못 찾았을 경우 대비)
                     if (fieldId === 'vendor' && vendors[firstResult[fieldId]]) {
                         commonData['account'] = vendors[firstResult[fieldId]].account;
                     }
                 }
             });
 
-            // 개별 항목 리스트 정제 및 생성
             items = newItems.map(res => {
                 const refined = refineItem(res);
                 const itemObj = {};
@@ -2008,7 +2036,6 @@
 
             render();
 
-            // 하이라이트 효과
             setTimeout(() => {
                 document.querySelectorAll('input, select').forEach(el => {
                     const id = el.id.replace('common_', '').split('_')[0];
@@ -2038,6 +2065,19 @@
                 textEl.textContent = msgs[idx];
             }, 2000);
         }
+
+        function formatSmartCurrency(value) {
+            if (!value) return '';
+            // 1. 기존 콤마 제거
+            let raw = value.toString().replace(/,/g, '');
+
+            // 2. 숫자가 포함되어 있는지 확인
+            // 정규식 설명: \d+ (숫자 연속) 부분을 찾아 toLocaleString으로 변환
+            return raw.replace(/\d+/g, (num) => {
+                return parseInt(num, 10).toLocaleString('en-US');
+            });
+        }
+
 
         // [추가] 고급 설정 토글 이벤트
         const toggleAdvBtn = document.getElementById('toggle-advanced-btn');
