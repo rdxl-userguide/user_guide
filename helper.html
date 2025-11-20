@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>WEHAGO 전자결재 폼 생성기 (v4.1)</title>
+    <title>WEHAGO 전자결재 폼 생성기 (v3.3)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
@@ -894,7 +894,7 @@
 
     <div class="footer-notice">
         <p>
-            위하고 폼 생성기 베타 테스트 (v4-ai 적용)<br>
+            위하고 폼 생성기 베타 테스트 (v4.1-AI 적용)<br>
             거래처 추가 요청이나 개선 의견은 언제든지 환영합니다. 경영기획팀에 문의해주세요.<br>
             <b>FOR RADEXEL INC. USE ONLY</b>
         </p>
@@ -1463,7 +1463,12 @@
             }
         });
 
-        // 1. 토스트 알림 기능
+
+        // -----------------------------------------------------------
+        // [복구 완료] 최종 양식 생성 및 복사 기능 (토스트 알림 포함)
+        // -----------------------------------------------------------
+
+        // 1. 토스트 알림 메시지 함수 (화면 하단에 팝업)
         function showToast(message, type = 'success') {
             let toast = document.getElementById('custom-toast');
             if (!toast) {
@@ -1482,21 +1487,33 @@
             }, 3000);
         }
 
-        // --- [수정] 복사 버튼 로직 (토스트 사용) ---
+        // 2. 복사 버튼 클릭 이벤트 리스너
         copyBtn.addEventListener('click', () => {
             const template = formTemplates[currentFormType];
+
+            // 스타일 정의
             const FONT = "font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 10pt;";
             const TD_L = `padding: 8px; font-weight: bold; text-align: center; background-color: #f2f2f2; ${FONT}`;
             const TD_V = `padding: 8px; vertical-align: top; ${FONT}`;
 
-            const header = `<tr><td style="${TD_L}">${template.title}</td>${items.map((_, i) => `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i + 1}</td>`).join('')}</tr>`;
-
-            const allVisibleFields = template.fields.filter(field => !hiddenFields.includes(field.id));
-
-            // [수정] 복사 시에도 이미지 순서와 동일하게 정렬
+            // 화면에 보이는 순서대로 엑셀/위하고에도 붙여넣기 위해 정렬 순서 정의
+            // (render 함수에 있는 순서와 동일하게 맞춤)
             const FIELD_ORDER = [
-                'itemName', 'unitPrice', 'qty', 'amount', 'date', 'paymentTerms', 'user',
-                'paymentMethod', 'vendor', 'account', 'relatedTask', 'purpose', 'note',
+                'itemName',      // 품목명
+                'unitPrice',     // 단가
+                'qty',           // 수량
+                'amount',        // 금액
+                'date',          // 날짜
+                'paymentTerms',  // 지급조건
+                'user',          // 사용자
+                'paymentMethod', // 결제수단
+                'vendor',        // 거래처
+                'account',       // 계좌
+                'relatedTask',   // 관련과제
+                'purpose',       // 목적
+                'note',          // 비고
+
+                // 그 외 필드들 (우선순위 낮음)
                 'service', 'course', 'license', 'tripObjective',
                 'spec', 'periodFrom', 'periodTo',
                 'isRecurring', 'recurringPeriod', 'recurringDate',
@@ -1504,38 +1521,76 @@
                 'ipMgmtNo', 'invoiceNo', 'proof', 'seats'
             ];
 
+            // 필드 정렬 함수
             const orderIndex = (id) => {
                 const i = FIELD_ORDER.indexOf(id);
+                // 정의되지 않은 필드는 뒤로 보냄
                 return i === -1 ? 1000 + template.fields.findIndex(f => f.id === id) : i;
             };
 
-            const sortFields = (arr) => arr.slice().sort((a, b) => orderIndex(a.id) - orderIndex(b.id));
-            const fieldsToCopy = sortFields(allVisibleFields);
+            // 숨김 처리된 필드는 제외하고, 위 순서대로 정렬
+            const allVisibleFields = template.fields.filter(field => !hiddenFields.includes(field.id));
+            const fieldsToCopy = allVisibleFields.slice().sort((a, b) => orderIndex(a.id) - orderIndex(b.id));
 
+            // [헤더 생성] 제목 + 항목1, 항목2...
+            const headerCells = items.map((_, i) =>
+                `<td style="text-align:center; font-weight:bold; background-color:#deebee; padding:8px; ${FONT}">항목 ${i + 1}</td>`
+            ).join('');
+            const headerRow = `<tr><td style="${TD_L}">${template.title}</td>${headerCells}</tr>`;
+
+            // [본문 생성] 각 필드별로 행을 생성
             const bodyRows = fieldsToCopy.map(field => {
-                return `<tr><td style="${TD_L}">${field.label}</td>${items.map(item => {
+                const valueCells = items.map(item => {
                     const value = item[field.id] || '';
-                    return `<td style="${TD_V}">${(value || '').replace(/\n/g, '<br>')}</td>`;
-                }).join('')}</tr>`;
+                    // 줄바꿈 문자를 <br>태그로 변환
+                    return `<td style="${TD_V}">${String(value).replace(/\n/g, '<br>')}</td>`;
+                }).join('');
+
+                return `<tr><td style="${TD_L}">${field.label}</td>${valueCells}</tr>`;
             }).join('');
 
-            const finalHtml = `<table border="1" style="border-collapse: collapse; width: 100%; ${FONT}"><thead>${header}</thead><tbody>${bodyRows}</tbody></table>`;
+            // 최종 HTML 테이블 조합
+            const finalHtml = `
+                <table border="1" style="border-collapse: collapse; width: 100%; ${FONT}">
+                    <thead>${headerRow}</thead>
+                    <tbody>${bodyRows}</tbody>
+                </table>
+            `;
 
+            // 클립보드에 복사 실행
             try {
+                // 최신 브라우저 방식 (Clipboard API)
                 const blob = new Blob([finalHtml], { type: 'text/html' });
-                const item = new ClipboardItem({ 'text/html': blob });
+                const clipboardItem = new ClipboardItem({ 'text/html': blob });
 
-                navigator.clipboard.write([item]).then(() => {
-                    showToast("복사 완료! 위하고에 붙여넣으세요.", "success");
+                navigator.clipboard.write([clipboardItem]).then(() => {
+                    showToast("복사 완료! WEHAGO에 붙여넣으세요.", "success");
                 }).catch(err => {
-                    console.error(err);
-                    showToast("복사 권한 오류. 브라우저 설정을 확인하세요.", "error");
+                    console.error('Clipboard API Error:', err);
+                    // 실패 시 fallback (구형 방식)
+                    fallbackCopy(finalHtml);
                 });
             } catch (e) {
-                console.error(e);
-                showToast("복사에 실패했습니다.", "error");
+                console.error('Copy failed:', e);
+                fallbackCopy(finalHtml);
+            }
+
+            // 구형 브라우저 호환용 함수
+            function fallbackCopy(html) {
+                const listener = (e) => {
+                    e.clipboardData.setData("text/html", html);
+                    e.clipboardData.setData("text/plain", html);
+                    e.preventDefault();
+                };
+                document.addEventListener("copy", listener);
+                document.execCommand("copy");
+                document.removeEventListener("copy", listener);
+                showToast("복사 완료! (호환 모드)", "success");
             }
         });
+
+
+
 
         let resizeTimer;
         window.addEventListener('resize', () => {
